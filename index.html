@@ -1,0 +1,4319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ứng Dụng Tính Toán Độ Lún Nền Móng & Mô Phỏng 3D - Địa Kỹ Thuật</title>
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-gradient: linear-gradient(135deg, #090d16 0%, #0f172a 40%, #1e3a8a 100%);
+      --accent: #3b82f6;
+      --accent-hover: #1d4ed8;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --warning: #f59e0b;
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: #374151;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.6), 0 8px 10px -6px rgba(0,0,0,0.4);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    html {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 60px;
+      -webkit-font-smoothing: antialiased;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body.drawer-open {
+      overflow: hidden !important;
+      touch-action: none;
+    }
+
+    /* Header Nền Tối Hiện Đại & Responsive Mobile */
+    header {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 2.2rem 1rem 1.8rem 1rem;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+      overflow: hidden;
+      width: 100%;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 10%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 2;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .mobile-menu-toggle {
+      display: none;
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      color: #93c5fd;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 50;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      transition: all 0.2s;
+    }
+
+    .mobile-menu-toggle:hover {
+      background: rgba(30, 58, 138, 0.95);
+      color: #ffffff;
+    }
+
+    header h1 {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.3;
+    }
+
+    header p {
+      font-size: 0.92rem;
+      opacity: 0.9;
+      color: #94a3b8;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Thẻ thông tin SV */
+    .badge-info-wrapper {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 1.2rem;
+    }
+
+    .badge-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(17, 24, 39, 0.8);
+      border: 1px solid rgba(75, 85, 99, 0.4);
+      padding: 6px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .badge-info span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-hint {
+      background: rgba(30, 58, 138, 0.4);
+      border: 1px dashed rgba(96, 165, 250, 0.6);
+      color: #bfdbfe;
+    }
+
+    /* Container & Tab Layout Responsive */
+    .container {
+      max-width: 1440px;
+      width: 100%;
+      margin: -15px auto 0 auto;
+      padding: 0 1rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+      width: 100%;
+      min-width: 0;
+    }
+
+    main, .tab-content-panel, .card {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    /* Side Navigation Tabs phong cách Dark Modern */
+    .nav-tabs-sidebar {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 1.2rem 1rem;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 40;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 998;
+    }
+
+    .nav-tab-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748b;
+      padding: 6px 10px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-tab-title:first-child {
+      margin-top: 0;
+    }
+
+    .nav-tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.18s ease;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .nav-tab-btn i {
+      font-size: 1.1rem;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+      color: #64748b;
+      transition: color 0.18s;
+    }
+
+    .nav-tab-btn .tab-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-tab-btn:hover {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-color: #334155;
+    }
+
+    .nav-tab-btn:hover i {
+      color: #93c5fd;
+    }
+
+    .nav-tab-btn.active {
+      background: #1e293b;
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .nav-tab-btn.active i {
+      color: #38bdf8;
+    }
+
+    .nav-tab-btn .tab-badge {
+      flex-shrink: 0;
+      margin-left: auto;
+      font-size: 0.72rem;
+      background: #111827;
+      padding: 2px 7px;
+      border-radius: 6px;
+      color: #94a3b8;
+      border: 1px solid #1f2937;
+      white-space: nowrap;
+    }
+
+    .tab-content-panel {
+      display: none;
+      animation: fadeInTab 0.25s ease forwards;
+    }
+
+    .tab-content-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Bottom Mobile Navigation Bar */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 60px;
+      background: rgba(15, 23, 42, 0.96);
+      border-top: 1px solid #1e293b;
+      z-index: 900;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 6px;
+    }
+
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 0.7rem;
+      font-weight: 600;
+      gap: 3px;
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+      background: transparent;
+      border: none;
+    }
+
+    .mobile-nav-item i {
+      font-size: 1.15rem;
+    }
+
+    .mobile-nav-item.active {
+      color: #38bdf8;
+    }
+
+    .mobile-nav-item.active i {
+      color: #38bdf8;
+    }
+
+    /* RESPONSIVE MEDIA QUERIES CHO ĐIỆN THOẠI & TABLET */
+    @media (max-width: 900px) {
+      body {
+        padding-bottom: 78px; /* Chừa khoảng trống an toàn cho Bottom Nav */
+      }
+
+      .mobile-menu-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: rgba(30, 41, 59, 0.95);
+        border: 1.5px solid rgba(59, 130, 246, 0.5);
+        color: #93c5fd;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        z-index: 50;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        transition: all 0.2s;
+      }
+
+      .mobile-bottom-nav {
+        display: flex;
+      }
+
+      /* Đẩy header content xuống dưới 56px để tuyệt đối không trùng vị trí nút Menu */
+      header {
+        padding: 56px 0.8rem 1.4rem 0.8rem !important;
+        text-align: center;
+      }
+
+      header h1 {
+        font-size: 1.15rem;
+        padding: 0 4px;
+        line-height: 1.35;
+        margin: 0 auto 0.4rem auto;
+        letter-spacing: -0.3px;
+      }
+
+      header p {
+        font-size: 0.78rem;
+        padding: 0 4px;
+        margin: 0 auto;
+        line-height: 1.4;
+      }
+
+      .badge-info-wrapper {
+        margin-top: 0.7rem;
+        gap: 6px;
+      }
+
+      .badge-info {
+        font-size: 0.72rem;
+        padding: 4px 10px;
+        border-radius: 8px;
+      }
+
+      .container {
+        padding: 0 0.5rem;
+        margin-top: -8px;
+        position: static;
+        z-index: auto;
+      }
+
+      .app-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.8rem;
+        min-width: 0;
+      }
+
+      /* Sidebar chuyển thành Drawer trượt từ bên trái ra trên mobile */
+      .nav-tabs-sidebar {
+        position: fixed;
+        top: 0;
+        left: -320px;
+        width: 285px;
+        max-width: calc(100vw - 44px);
+        height: 100vh;
+        height: 100dvh;
+        border-radius: 0 16px 16px 0;
+        overflow-y: auto;
+        z-index: 1001 !important;
+        box-shadow: 10px 0 35px rgba(0,0,0,0.85);
+        padding: 1.2rem 1rem;
+        background: #0f172a;
+        border-right: 1px solid #1e293b;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .nav-tabs-sidebar.open {
+        left: 0;
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.72);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        z-index: 1000 !important;
+      }
+
+      .sidebar-overlay.open {
+        display: block;
+      }
+
+      .simulation-3d-wrapper {
+        grid-template-columns: 1fr !important;
+        gap: 0.8rem !important;
+      }
+
+      .mobile-status-toggle {
+        display: flex !important;
+      }
+
+      .model-status-content {
+        display: none !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        margin-top: 8px !important;
+      }
+
+      .model-status-content.show {
+        display: flex !important;
+        animation: fadeInStatus 0.2s ease forwards;
+      }
+
+      @keyframes fadeInStatus {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .model-status-item {
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        font-size: 0.74rem !important;
+        padding: 7px 12px !important;
+      }
+
+      .canvas-btn-reset-cam {
+        top: 8px;
+        right: 8px;
+        padding: 5px 10px;
+        font-size: 0.7rem;
+      }
+
+      .canvas-3d-container {
+        min-height: 360px !important;
+        height: 360px !important;
+        border-radius: 12px !important;
+      }
+
+      .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+      }
+
+      .card-title {
+        font-size: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding-bottom: 0.6rem;
+        margin-bottom: 1rem;
+      }
+
+      .card-title .hint-pill {
+        font-size: 0.7rem;
+      }
+
+      .card-title .title-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.95rem;
+      }
+
+      .grid-inputs {
+        grid-template-columns: 1fr !important;
+        gap: 0.8rem;
+      }
+
+      .chart-container {
+        height: 320px;
+        padding: 0.6rem;
+      }
+
+      .results-banner {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.6rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .stat-box {
+        padding: 0.85rem !important;
+        min-width: 0 !important;
+      }
+
+      .stat-value {
+        font-size: 1.15rem;
+      }
+
+      .stat-label {
+        font-size: 0.72rem;
+      }
+
+      .sidebar-3d {
+        padding: 0.85rem;
+        border-radius: 10px;
+        gap: 0.8rem;
+      }
+
+      .table-container {
+        border-radius: 8px;
+      }
+
+      table {
+        font-size: 0.75rem;
+      }
+
+      th, td {
+        padding: 6px 8px !important;
+      }
+
+      .ep-row.is-collapsed-mobile {
+        display: none !important;
+      }
+
+      .ep-mobile-toggle-btn {
+        display: inline-flex !important;
+      }
+
+      .btn-group {
+        gap: 0.6rem;
+      }
+
+      #btnCloseSidebar {
+        display: inline-flex !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 1.02rem;
+      }
+
+      .results-banner {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 0.6rem !important;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .canvas-3d-container {
+        min-height: 300px !important;
+        height: 300px !important;
+      }
+
+      .badge-info {
+        font-size: 0.65rem;
+        padding: 3px 8px;
+      }
+
+      .badge-info-wrapper {
+        gap: 4px;
+      }
+
+      .stat-box {
+        padding: 0.7rem;
+      }
+
+      .stat-value {
+        font-size: 1rem;
+      }
+    }
+
+    /* Toast thông báo đã tính toán xong */
+    .calc-toast {
+      position: fixed;
+      bottom: 85px;
+      right: 25px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px solid #10b981;
+      color: #ecfdf5;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateY(30px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .calc-toast.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .calc-toast i {
+      color: #34d399;
+      font-size: 1.2rem;
+    }
+    @media (max-width: 900px) {
+      .calc-toast {
+        bottom: 75px;
+        right: 15px;
+        left: 15px;
+        justify-content: center;
+      }
+    }
+
+    /* Card Panels Nền Tối Hiện Đại */
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 1.8rem;
+      margin-bottom: 1.8rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--card-border);
+      position: relative;
+      width: 100%;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      color: #60a5fa;
+      font-weight: 700;
+      margin-bottom: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.8rem;
+    }
+
+    .card-title .title-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .card-title .title-left span {
+      word-break: break-word;
+    }
+    }
+
+    .card-title .title-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .hint-pill {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #94a3b8;
+      background: #1f2937;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid #374151;
+    }
+
+    /* 3D Simulation Panel Styles */
+    .simulation-3d-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+      min-height: 560px;
+      width: 100%;
+    }
+
+    @media (max-width: 950px) {
+      .simulation-3d-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .canvas-3d-container {
+      position: relative;
+      background: #030712;
+      border-radius: 14px;
+      border: 1px solid #1f2937;
+      overflow: hidden;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+      min-height: 540px;
+      width: 100%;
+      cursor: grab;
+    }
+
+    .canvas-3d-container:active {
+      cursor: grabbing;
+    }
+
+    #threeCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    /* Tooltip / Popup khi chạm hoặc click */
+    #infoTooltip3D {
+      position: absolute;
+      display: none;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px solid #3b82f6;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #ffffff;
+      font-size: 0.82rem;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+      z-index: 50;
+      max-width: min(280px, calc(100% - 20px));
+      line-height: 1.45;
+      transition: opacity 0.15s ease;
+    }
+
+    #infoTooltip3D .tt-title {
+      font-weight: 700;
+      color: #60a5fa;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #374151;
+      padding-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* THANH TRẠNG THÁI MÔ HÌNH 3D (ĐẶT NGOÀI CANVAS, GIỮA TIÊU ĐỀ VÀ KHUNG VẼ 3D) */
+    .model-status-bar {
+      margin-bottom: 1.2rem;
+      width: 100%;
+    }
+
+    .mobile-status-toggle {
+      display: none;
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #93c5fd;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .mobile-status-toggle:hover {
+      background: #27354f;
+      border-color: #3b82f6;
+      color: #ffffff;
+    }
+
+    .mobile-status-toggle .toggle-arrow {
+      transition: transform 0.25s ease;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .mobile-status-toggle.expanded .toggle-arrow {
+      transform: rotate(180deg);
+      color: #38bdf8;
+    }
+
+    .model-status-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .model-status-item {
+      flex: 1 1 calc(33.333% - 10px);
+      min-width: 220px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-left: 3.5px solid #3b82f6;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #bfdbfe;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      transition: all 0.2s ease;
+      word-break: break-word;
+    }
+
+    .model-status-item i {
+      color: #60a5fa;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .model-status-item.item-mode {
+      border-left-color: #38bdf8;
+    }
+
+    .model-status-item#hud_footing_dim {
+      border-left-color: #f59e0b;
+    }
+
+    .model-status-item#hud_hc_depth {
+      border-left-color: #10b981;
+    }
+
+    @media (max-width: 900px) {
+      .mobile-status-toggle {
+        display: flex !important;
+      }
+      .model-status-content {
+        display: none !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        margin-top: 8px !important;
+      }
+      .model-status-content.show {
+        display: flex !important;
+        animation: fadeInStatus 0.2s ease forwards;
+      }
+      .model-status-item {
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        font-size: 0.74rem !important;
+        padding: 7px 12px !important;
+      }
+    }
+
+    /* Nút Đặt lại góc nhìn móng (Reset Camera) đặt gọn góc canvas */
+    .canvas-btn-reset-cam {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(59, 130, 246, 0.45);
+      color: #93c5fd;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 20;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      transition: all 0.2s;
+    }
+
+    .canvas-btn-reset-cam:hover {
+      background: rgba(30, 58, 138, 0.95);
+      border-color: #3b82f6;
+      color: #ffffff;
+    }
+
+    .controls-hint {
+      position: absolute;
+      bottom: 8px;
+      right: 10px;
+      background: rgba(15, 23, 42, 0.82);
+      border: 1px solid rgba(75, 85, 99, 0.5);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      color: #9ca3af;
+      pointer-events: none;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 20;
+      max-width: calc(100% - 20px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 900px) {
+      .controls-hint {
+        font-size: 0.62rem;
+        padding: 3px 6px;
+        bottom: 6px;
+        right: 6px;
+      }
+    }
+
+    .sidebar-3d {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .sidebar-group-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #60a5fa;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Chế độ tương tác Radio/Toggle */
+    .mode-select-box {
+      display: flex;
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: #1e293b;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-row:hover {
+      background: #27354f;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: #3b82f6;
+    }
+
+    .legend-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #131d31;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #1f2d48;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Grid for Inputs */
+    .grid-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .form-group label span.unit {
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 0.78rem;
+      background: #1f2937;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .form-control {
+      padding: 10px 14px;
+      border: 1.5px solid #374151;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background-color: #0f172a;
+      font-weight: 600;
+      color: #f8fafc;
+      transition: all 0.2s ease;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background-color: #111827;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    /* Table Design Dark */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 1.2rem;
+      background: #0f172a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.88rem;
+      text-align: center;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+
+    th:last-child, td:last-child {
+      border-right: none;
+    }
+
+    th {
+      background: #1e293b;
+      color: #93c5fd;
+      font-weight: 700;
+      white-space: nowrap;
+      text-transform: none;
+      font-size: 0.78rem;
+      letter-spacing: 0.5px;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: #162032;
+    }
+
+    td input {
+      width: 100%;
+      min-width: 95px;
+      padding: 8px 10px;
+      border: 1.5px solid #374151;
+      border-radius: 6px;
+      background-color: #0b0f19;
+      text-align: center;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: #f3f4f6;
+      transition: all 0.2s;
+    }
+
+    td input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+      background: #111827;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+    }
+
+    .btn-secondary {
+      background-color: #1e293b;
+      color: #cbd5e1;
+      border: 1.5px solid #374151;
+    }
+
+    .btn-secondary:hover {
+      background-color: #334155;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: linear-gradient(135deg, #10b981, #059669);
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #991b1b;
+    }
+
+    .btn-danger:hover {
+      background: #991b1b;
+      color: #ffffff;
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: white;
+      border: 1px solid #0284c7;
+    }
+
+    .btn-info:hover {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+    }
+
+    .btn-outline-info {
+      background: rgba(14, 165, 233, 0.12);
+      border: 1.5px solid #0284c7;
+      color: #38bdf8;
+    }
+
+    .btn-outline-info:hover {
+      background: #0284c7;
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+    }
+
+    /* NÚT XÓA CẤP ÁP LỰC TRÊN BẢNG ĐỊA TẦNG */
+    .btn-del-ep {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 6px;
+      transition: all 0.2s;
+      vertical-align: middle;
+    }
+
+    .btn-del-ep:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #ffffff;
+      transform: scale(1.1);
+    }
+
+    /* HÀNG TIÊU ĐỀ PHÂN ĐỊNH KHU VỰC ĐƯỜNG CONG e - p */
+    .ep-table-header-row td {
+      background: linear-gradient(90deg, #1e293b 0%, #0f274a 100%) !important;
+      border-top: 2px solid #3b82f6 !important;
+      border-bottom: 2px solid #3b82f6 !important;
+      padding: 10px 14px !important;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .ep-table-header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .ep-table-header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: #93c5fd;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ep-table-header-title i {
+      color: #38bdf8;
+      font-size: 1rem;
+    }
+
+    .ep-mobile-toggle-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(59, 130, 246, 0.45);
+      color: #38bdf8;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .ep-mobile-toggle-btn:hover {
+      background: #1e3a8a;
+      color: #ffffff;
+    }
+
+    /* MODAL THÊM CẤP ÁP LỰC e - p */
+    .custom-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      animation: fadeInModal 0.2s ease-out;
+    }
+
+    @keyframes fadeInModal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .custom-modal-card {
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(59, 130, 246, 0.2);
+      overflow: hidden;
+      animation: scaleUpModal 0.25s ease-out;
+    }
+
+    @keyframes scaleUpModal {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .custom-modal-header {
+      padding: 1rem 1.4rem;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .custom-modal-header .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .modal-close-btn:hover {
+      color: #ffffff;
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .custom-modal-body {
+      padding: 1.4rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .custom-modal-footer {
+      padding: 1rem 1.4rem;
+      background: #131d31;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .ep-layer-row-input {
+      background: #162032;
+      border: 1px solid #283548;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+    }
+
+    .ep-layer-row-input label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.84rem;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    .ep-layer-row-input .hint-interpolated {
+      font-size: 0.75rem;
+      color: #38bdf8;
+    }
+
+    /* Results section */
+    .results-banner {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .stat-box {
+      background: #0f172a;
+      padding: 1.4rem;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      border-top: 4px solid #3b82f6;
+      box-shadow: var(--shadow-sm);
+      min-width: 0;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .stat-box.highlight {
+      border-top-color: var(--success);
+      background: linear-gradient(to bottom, #064e3b22, #0f172a);
+    }
+
+    .stat-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-desc {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* Status evaluation banner */
+    .eval-box {
+      padding: 1.2rem 1.6rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 1.8rem;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .eval-box div {
+      min-width: 0;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .eval-pass {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1.5px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .eval-fail {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* Chart Layout */
+    .chart-container {
+      position: relative;
+      height: 460px;
+      width: 100%;
+      margin: 1.5rem 0;
+      background: #0b0f19;
+      padding: 1.2rem;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+    }
+
+    /* Tables in Results */
+    .res-table th {
+      background: #1e3a8a;
+      color: #ffffff;
+      font-size: 0.78rem;
+      text-transform: none !important;
+    }
+
+    .res-table td {
+      font-size: 0.88rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #e2e8f0;
+      text-transform: none !important;
+    }
+
+    .res-table td:last-child {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .row-stopped {
+      background-color: rgba(245, 158, 11, 0.18) !important;
+      font-weight: 700;
+      color: #fde68a !important;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      color: #64748b;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER NỀN ĐEN HIỆN ĐẠI -->
+  <header>
+    <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()" aria-label="Mở menu điều hướng">
+      <i class="fa-solid fa-bars"></i> <span>Menu</span>
+    </button>
+    <div class="header-content">
+      <h1><i class="fa-solid fa-cubes-stacked"></i> ỨNG DỤNG TÍNH TOÁN ĐỘ LÚN NỀN MÓNG</h1>
+      <p>Phương pháp cộng lún từng lớp e - p theo Tiêu chuẩn Quốc gia TCVN 9362:2012</p>
+      
+      <div class="badge-info-wrapper">
+        <div class="badge-info">
+          <span><i class="fa-solid fa-user-graduate" style="color: #60a5fa;"></i> Sinh viên: <strong>Phạm Bá Phúc</strong></span>
+          <span>•</span>
+          <span><i class="fa-solid fa-graduation-cap" style="color: #60a5fa;"></i> Lớp: <strong>D25XDK1</strong></span>
+        </div>
+        <div class="badge-info badge-hint">
+          <span><i class="fa-solid fa-sliders" style="color: #60a5fa;"></i> <strong>Tùy biến số liệu & Thêm lớp đất linh hoạt</strong></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- LỚP PHỦ MỜ KHI MỞ MENU TRÊN ĐIỆN THOẠI -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
+  <div class="container">
+    <div class="app-layout">
+      <!-- SIDEBAR TABS DỌC GỌN GÀNG (DRAWER TRÊN MOBILE) -->
+      <aside class="nav-tabs-sidebar" id="navSidebar">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px 8px 4px; border-bottom: 1px solid #1e293b; margin-bottom: 8px;">
+          <div class="nav-tab-title" style="padding: 0; margin: 0; color: #60a5fa;"><i class="fa-solid fa-compass"></i> BẢNG ĐIỀU HƯỚNG</div>
+          <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.85rem;" id="btnCloseSidebar" onclick="closeMobileSidebar()" aria-label="Đóng menu">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="nav-tab-title"><i class="fa-solid fa-layer-group"></i> Không Gian & Mô Phỏng</div>
+        <button class="nav-tab-btn active" id="tabBtn_3d" onclick="switchMainTab('tab_3d')">
+          <i class="fa-solid fa-cube"></i>
+          <span class="tab-text">Mô Hình 3D Móng</span>
+          <span class="tab-badge">Visual</span>
+        </button>
+
+        <div class="nav-tab-title"><i class="fa-solid fa-database"></i> Dữ Liệu Đầu Vào</div>
+        <button class="nav-tab-btn" id="tabBtn_input" onclick="switchMainTab('tab_input')">
+          <i class="fa-solid fa-sliders"></i>
+          <span class="tab-text">Nhập Số Liệu</span>
+          <span class="tab-badge">Móng & Đất</span>
+        </button>
+
+        <div class="nav-tab-title"><i class="fa-solid fa-square-poll-vertical"></i> Báo Cáo Kỹ Thuật</div>
+        <button class="nav-tab-btn" id="tabBtn_result" onclick="switchMainTab('tab_result')">
+          <i class="fa-solid fa-chart-line"></i>
+          <span class="tab-text">Kết Quả Lún e - p</span>
+          <span class="tab-badge" id="tab_s_badge">13.89 cm</span>
+        </button>
+        
+        <div style="margin-top: 1.2rem; border-top: 1px solid #1e293b; padding-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn btn-primary" style="padding: 10px 14px; font-size: 0.85rem; width: 100%; justify-content: center;" onclick="tinhToanDoLun(); closeMobileSidebar();">
+            <i class="fa-solid fa-calculator"></i> Tính Toán Ngay
+          </button>
+          <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.82rem; width: 100%; justify-content: center;" onclick="datLaiMacDinh(); closeMobileSidebar();">
+            <i class="fa-solid fa-arrow-rotate-left"></i> Khôi Phục Mặc Định
+          </button>
+        </div>
+      </aside>
+
+      <!-- KHU VỰC NỘI DUNG TỪNG TAB -->
+      <main class="tab-content-wrapper">
+
+        <!-- TAB 1: MÔ HÌNH 3D -->
+        <div id="tab_3d" class="tab-content-panel active">
+          <div class="card">
+            <div class="card-title">
+              <div class="title-left">
+                <div class="title-icon"><i class="fa-solid fa-cube"></i></div>
+                <span>Mô Hình Không Gian 3D: Móng Đơn Bê Tông & Các Lớp Đất Nền</span>
+              </div>
+              <span class="hint-pill">Tương tác trực quan trên nền 3D</span>
+            </div>
+
+            <!-- THANH TRẠNG THÁI HUD NẰM NGOÀI CANVAS (GIỮA TIÊU ĐỀ VÀ KHUNG VẼ 3D) -->
+            <div class="model-status-bar" id="modelStatusBar">
+              <button class="mobile-status-toggle" id="btnToggleModelStatus" onclick="toggleModelStatusMobile()" aria-expanded="false">
+                <span><i class="fa-solid fa-circle-info"></i> Thông số mô hình 3D</span>
+                <i class="fa-solid fa-chevron-down toggle-arrow" id="statusToggleArrow"></i>
+              </button>
+
+              <div class="model-status-content" id="modelStatusContent">
+                <div class="model-status-item item-mode">
+                  <i class="fa-solid fa-eye"></i>
+                  <span>CHẾ ĐỘ: 3D REAL-TIME VIEW (MÓNG CỨNG DƯỚI CỘT)</span>
+                </div>
+                <div class="model-status-item" id="hud_footing_dim">
+                  <i class="fa-solid fa-cube"></i>
+                  <span>MÓNG: b=2.0m × l=3.0m × Df=2.0m</span>
+                </div>
+                <div class="model-status-item" id="hud_hc_depth">
+                  <i class="fa-solid fa-chart-line"></i>
+                  <span>VÙNG ẢNH HƯỞNG LÚN Hc = 5.70 m (ĐÃ TẮT LÚN)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="simulation-3d-wrapper">
+              <div class="canvas-3d-container" id="canvas3dContainer">
+                <canvas id="threeCanvas"></canvas>
+                
+                <!-- Tooltip thông số khi chạm/hover hoặc click -->
+                <div id="infoTooltip3D"></div>
+
+                <!-- Nút Đặt lại góc nhìn (Reset camera) -->
+                <button class="canvas-btn-reset-cam" onclick="resetCamera3D()" title="Đặt lại góc nhìn camera">
+                  <i class="fa-solid fa-arrows-rotate"></i> <span>Góc nhìn</span>
+                </button>
+
+                <div class="controls-hint">
+                  <i class="fa-solid fa-circle-question"></i> <span id="hintModeText">Xoay: Kéo chuột/chạm | Thu phóng: Cuộn | Chạm: Xem thông số</span>
+                </div>
+              </div>
+
+              <!-- Sidebar điều khiển 3D & Chú giải -->
+              <div class="sidebar-3d">
+                <div>
+                  <div class="sidebar-group-title"><i class="fa-solid fa-circle-info"></i> Chế Độ Hiện Thông Số 3D</div>
+                  <div class="mode-select-box">
+                    <button class="mode-btn active" id="btnModeHover" onclick="setTooltipMode('hover')">
+                      <i class="fa-solid fa-hand-pointer"></i> Khi Chạm (Hover)
+                    </button>
+                    <button class="mode-btn" id="btnModeClick" onclick="setTooltipMode('click')">
+                      <i class="fa-solid fa-arrow-pointer"></i> Khi Click
+                    </button>
+                    <button class="mode-btn" id="btnModeNone" onclick="setTooltipMode('none')">
+                      <i class="fa-solid fa-eye-slash"></i> Tắt Hiện
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="sidebar-group-title"><i class="fa-solid fa-toggle-on"></i> Tùy Chọn Hiển Thị 3D</div>
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label class="toggle-row">
+                      <span>Cắt góc nhìn móng (Cutaway 1/4 View)</span>
+                      <input type="checkbox" id="chk_cutaway" checked onchange="update3DScene()">
+                    </label>
+                    <label class="toggle-row">
+                      <span>Tách rời các lớp đất (Exploded View)</span>
+                      <input type="checkbox" id="chk_explode" onchange="update3DScene()">
+                    </label>
+                    <label class="toggle-row">
+                      <span>Tải trọng chân cột (N, M, Q)</span>
+                      <input type="checkbox" id="chk_forces" checked onchange="update3DScene()">
+                    </label>
+                    <label class="toggle-row">
+                      <span>Mực nước ngầm 3D (Water Wave)</span>
+                      <input type="checkbox" id="chk_water" checked onchange="update3DScene()">
+                    </label>
+                    <label class="toggle-row">
+                      <span>Bóng nén lún Hc (Stress Bulb)</span>
+                      <input type="checkbox" id="chk_hc_bulb" checked onchange="update3DScene()">
+                    </label>
+                    <label class="toggle-row">
+                      <span>Tự động xoay quanh móng</span>
+                      <input type="checkbox" id="chk_autorotate" onchange="toggleAutoRotate()">
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="sidebar-group-title"><i class="fa-solid fa-palette"></i> Chú Giải Địa Tầng & Móng</div>
+                  <div class="legend-box" id="legendBox">
+                    <!-- Render động theo danh sách lớp đất -->
+                  </div>
+                </div>
+
+                <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.85rem; justify-content: center;" onclick="resetCamera3D()">
+                  <i class="fa-solid fa-video"></i> Reset Góc Nhìn Camera
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: NHẬP SỐ LIỆU MÓNG & ĐỊA CHẤT -->
+        <div id="tab_input" class="tab-content-panel">
+          <!-- PANEL 1: THÔNG SỐ MÓNG & TẢI TRỌNG -->
+          <div class="card">
+            <div class="card-title">
+              <div class="title-left">
+                <div class="title-icon"><i class="fa-solid fa-ruler-combined"></i></div>
+                <span>1. Kích Thước Móng & Tải Trọng Đáy Cột</span>
+              </div>
+              <span class="hint-pill">Tùy chỉnh b, l, h, N, M...</span>
+            </div>
+
+            <div class="grid-inputs">
+              <div class="form-group">
+                <label>Bề rộng đáy móng (b) <span class="unit">m</span></label>
+                <input type="text" id="inp_b" class="form-control" value="2.0" placeholder="Ví dụ: 2.0" onchange="tinhToanDoLun()">
+              </div>
+              <div class="form-group">
+                <label>Chiều dài đáy móng (l) <span class="unit">m</span></label>
+                <input type="text" id="inp_l" class="form-control" value="3.0" placeholder="Ví dụ: 3.0" onchange="tinhToanDoLun()">
+              </div>
+              <div class="form-group">
+                <label>Độ sâu chôn móng (h / Df) <span class="unit">m</span></label>
+                <input type="text" id="inp_h" class="form-control" value="2.0" placeholder="Ví dụ: 2.0" onchange="tinhToanDoLun()">
+              </div>
+              <div class="form-group">
+                <label>Mực nước ngầm (GW) <span class="unit">m (từ mặt đất)</span></label>
+                <input type="text" id="inp_gw" class="form-control" value="7.70" placeholder="Ví dụ: 7.7" onchange="tinhToanDoLun()">
+              </div>
+              <div class="form-group">
+                <label>Lực dọc tiêu chuẩn (N) <span class="unit">kN</span></label>
+                <input type="text" id="inp_N" class="form-control" value="1709.0" placeholder="Ví dụ: 1709" onchange="tinhToanDoLun()">
+              </div>
+              <div class="form-group">
+                <label>Mô-men uốn đáy cột (M) <span class="unit">kN·m</span></label>
+                <input type="text" id="inp_M" class="form-control" value="259.0" placeholder="Ví dụ: 259" onchange="tinhToanDoLun()">
+              </div>
+              <div class="form-group">
+                <label>Phương tác dụng của mô-men (M)</label>
+                <select id="inp_M_dir" class="form-control" onchange="tinhToanDoLun()">
+                  <option value="l" selected>Theo phương cạnh l (M_l: W = b·l²/6)</option>
+                  <option value="b">Theo phương cạnh b (M_b: W = l·b²/6)</option>
+                  <option value="auto">Tự động theo cạnh dài max(b, l)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Dung trọng TB móng & đất (γtb) <span class="unit">kN/m³</span></label>
+                <input type="text" id="inp_gamma_tb" class="form-control" value="20.0" placeholder="Mặc định: 20" onchange="tinhToanDoLun()">
+              </div>
+              <div class="form-group">
+                <label>Độ lún giới hạn ([S]) <span class="unit">cm</span></label>
+                <input type="text" id="inp_S_limit" class="form-control" value="8.0" placeholder="Mặc định: 8.0" onchange="tinhToanDoLun()">
+              </div>
+            </div>
+          </div>
+
+          <!-- PANEL 2: CHỈ TIÊU CƠ LÝ CÁC LỚP ĐẤT -->
+          <div class="card">
+            <div class="card-title">
+              <div class="title-left">
+                <div class="title-icon"><i class="fa-solid fa-layer-group"></i></div>
+                <span>2. Chỉ Tiêu Cơ Lý Các Lớp Đất Nền</span>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-outline-info" style="padding: 6px 14px; font-size: 0.85rem;" onclick="moModalThemCapApLuc()">
+                  <i class="fa-solid fa-chart-line"></i> Thêm Cấp Áp Lực e - p
+                </button>
+                <button class="btn btn-success" style="padding: 6px 14px; font-size: 0.85rem;" onclick="themLopDat()">
+                  <i class="fa-solid fa-plus"></i> Thêm Lớp Đất Mới
+                </button>
+                <button class="btn btn-danger" style="padding: 6px 14px; font-size: 0.85rem;" onclick="xoaLopDatCuoi()">
+                  <i class="fa-solid fa-trash-can"></i> Xóa Lớp Cuối
+                </button>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table id="soilTable">
+                <thead>
+                  <tr id="soilHeaderRow">
+                    <th style="text-align: left; min-width: 200px;">Chỉ tiêu cơ lý địa chất</th>
+                    <th>Ký hiệu</th>
+                    <th>Đơn vị</th>
+                  </tr>
+                </thead>
+                <tbody id="soilTableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="tinhToanDoLun()">
+                <i class="fa-solid fa-calculator"></i> CHẠY TÍNH TOÁN ĐỘ LÚN & CẬP NHẬT 3D
+              </button>
+              <button class="btn btn-secondary" onclick="datLaiMacDinh()">
+                <i class="fa-solid fa-arrow-rotate-left"></i> Khôi Phục Số Liệu Mặc Định
+              </button>
+            </div>
+          </div>
+
+          <!-- MODAL THÊM CẤP ÁP LỰC e - p MỚI -->
+          <div id="modalAddEp" class="custom-modal-backdrop" style="display: none;" onclick="if(event.target === this) dongModalThemCapApLuc()">
+            <div class="custom-modal-card" onclick="event.stopPropagation()">
+              <div class="custom-modal-header">
+                <div class="modal-title">
+                  <i class="fa-solid fa-chart-line" style="color: #38bdf8;"></i>
+                  <span>Thêm Cấp Áp Lực e - p Mới Vào Bảng Địa Tầng</span>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="dongModalThemCapApLuc()" title="Đóng cửa sổ">✕</button>
+              </div>
+              <div class="custom-modal-body">
+                <div class="form-group" style="margin-bottom: 1.1rem;">
+                  <label style="font-weight: 700; color: #93c5fd; font-size: 0.88rem;">Cấp áp lực nén p mới <span class="unit">kPa</span> <span style="color:#f87171;">*</span></label>
+                  <input type="text" id="inp_new_p" class="form-control font-mono" placeholder="Ví dụ: 150 (hoặc 50, 250, 500, 600...)" oninput="goiYHeSoRongChoLopDat()">
+                  <small style="color: #94a3b8; font-size: 0.78rem; display: block; margin-top: 5px;">
+                    <i class="fa-solid fa-circle-info"></i> Quy tắc: p ≥ 0 kPa, không trùng các cấp hiện có (<span id="txtCurrentEpSteps" style="color:#38bdf8; font-weight:600;">0, 100, 200, 300, 400</span>).
+                  </small>
+                </div>
+                
+                <div style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <i class="fa-solid fa-layer-group"></i> Hệ số rỗng e tương ứng của từng lớp đất:
+                </div>
+                <div id="modalEpLayersContainer">
+                  <!-- Được sinh động theo số lượng lớp đất hiện tại -->
+                </div>
+              </div>
+              <div class="custom-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="dongModalThemCapApLuc()">Hủy Bỏ</button>
+                <button type="button" class="btn btn-primary" onclick="xacNhanThemCapApLuc()">
+                  <i class="fa-solid fa-check"></i> Xác Nhận Thêm Vào Bảng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: KẾT QUẢ TÍNH TOÁN ĐỘ LÚN -->
+        <div id="tab_result" class="tab-content-panel">
+          <div id="resultSection" class="card">
+            <div class="card-title">
+              <div class="title-left">
+                <div class="title-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <span>3. Kết Quả Tính Toán Lún & Biểu Đồ Ứng Suất</span>
+              </div>
+              <span class="hint-pill">Tự động bóc tách & chia phân tố</span>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="results-banner">
+              <div class="stat-box">
+                <div class="stat-title">Áp lực đáy móng p<sub>tb</sub></div>
+                <div class="stat-value" id="res_p">0.00 kPa</div>
+                <div class="stat-desc">
+                  <div>Diện tích F = <span id="res_F">6.00</span> m²</div>
+                  <div id="res_p_detail" style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;"></div>
+                </div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-title">Ứng suất bản thân đáy móng</div>
+                <div class="stat-value" id="res_sig_bt_day">0.00 kPa</div>
+                <div class="stat-desc">Tại đáy móng Df = <span id="res_Df">2.00</span> m</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-title">Áp lực gây lún p_gl</div>
+                <div class="stat-value" id="res_pgl">0.00 kPa</div>
+                <div class="stat-desc">p_gl = p - σ_bt(đáy)</div>
+              </div>
+              <div class="stat-box highlight">
+                <div class="stat-title">Tổng độ lún ổn định S</div>
+                <div class="stat-value" id="res_total_S" style="color: #34d399;">0.00 cm</div>
+                <div class="stat-desc">Độ sâu nén lún Hc = <span id="res_Hc">0.00 m</span></div>
+              </div>
+            </div>
+
+            <!-- Evaluation Safe/Unsafe Banner -->
+            <div id="evalBanner" class="eval-box"></div>
+
+            <!-- Chart Biểu đồ Ứng suất Nền Tối -->
+            <div class="card-title" style="margin-top: 1.5rem; font-size: 1.1rem; border-bottom: none; padding-bottom: 0;">
+              <div class="title-left">
+                <div class="title-icon" style="background: rgba(219, 39, 119, 0.15); color: #f472b6;"><i class="fa-solid fa-chart-area"></i></div>
+                <span>Biểu Đồ Phân Bố Ứng Suất Theo Chiều Sâu z (Dưới Đáy Móng)</span>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="stressChart"></canvas>
+            </div>
+
+            <!-- Bảng 1: Phân bố ứng suất từng điểm -->
+            <div class="card-title" style="margin-top: 2rem; font-size: 1.1rem; border-bottom: none; padding-bottom: 0;">
+              <div class="title-left">
+                <div class="title-icon" style="background: rgba(8, 145, 178, 0.15); color: #38bdf8;"><i class="fa-solid fa-table"></i></div>
+                <span>Bảng Ứng Suất Bản Thân & Ứng Suất Gây Lún Từng Điểm Phân Tố</span>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="res-table" id="pointsTable">
+                <thead>
+                  <tr>
+                    <th>Điểm <i>i</i></th>
+                    <th>Độ sâu <i>z</i> (m)</th>
+                    <th><i>z/b</i></th>
+                    <th>Hệ số <i>k</i><sub>0</sub></th>
+                    <th>σ<sub>bt</sub> (kPa)</th>
+                    <th>σ<sub>gl</sub> (kPa)</th>
+                    <th>Ngưỡng tắt lún (kPa)</th>
+                    <th>Ghi chú / Tình trạng</th>
+                  </tr>
+                </thead>
+                <tbody id="pointsTableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Bảng 2: Tính độ lún từng phân tố Si -->
+            <div class="card-title" style="margin-top: 2rem; font-size: 1.1rem; border-bottom: none; padding-bottom: 0;">
+              <div class="title-left">
+                <div class="title-icon" style="background: rgba(22, 163, 74, 0.15); color: #4ade80;"><i class="fa-solid fa-table-list"></i></div>
+                <span>Bảng Tính Độ Lún Các Phân Tố Tới Điểm Tắt Lún Hc (Phương pháp e - p)</span>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="res-table" id="settlementTable">
+                <thead>
+                  <tr>
+                    <th>Phân tố</th>
+                    <th>Chiều dày <i>h</i><sub>i</sub> (m)</th>
+                    <th>Lớp đất</th>
+                    <th><i>p</i><sub>1i</sub> (kPa)</th>
+                    <th><i>p</i><sub>2i</sub> (kPa)</th>
+                    <th><i>e</i><sub>1i</sub></th>
+                    <th><i>e</i><sub>2i</sub></th>
+                    <th>Độ lún <i>S</i><sub>i</sub> (cm)</th>
+                  </tr>
+                </thead>
+                <tbody id="settlementTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION BAR DÀNH CHO ĐIỆN THOẠI -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-item active" id="mNav_3d" onclick="switchMainTab('tab_3d')">
+      <i class="fa-solid fa-cube"></i>
+      <span>Mô Hình 3D</span>
+    </button>
+    <button class="mobile-nav-item" id="mNav_input" onclick="switchMainTab('tab_input')">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Nhập Liệu</span>
+    </button>
+    <button class="mobile-nav-item" id="mNav_result" onclick="switchMainTab('tab_result')">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Kết Quả</span>
+    </button>
+    <button class="mobile-nav-item" onclick="toggleMobileSidebar()">
+      <i class="fa-solid fa-bars"></i>
+      <span>Menu</span>
+    </button>
+  </nav>
+
+  <!-- TOAST THÔNG BÁO TÍNH TOÁN XONG -->
+  <div id="calcToast" class="calc-toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="calcToastMsg">Đã tính toán xong!</span>
+  </div>
+
+  <footer>
+    <p>Hệ thống tự động tính toán Cơ học đất / Địa kỹ thuật &copy; 2026</p>
+    <p style="margin-top: 4px; font-size: 0.82rem; color: #64748b;">Phát triển bởi SV Phạm Bá Phúc - Lớp: D25XDK1</p>
+  </footer>
+
+  <!-- SCRIPT LOGIC TOÀN PHẦN -->
+  <script>
+    // HIỂN THỊ TOAST THÔNG BÁO TÍNH TOÁN XONG
+    let toastTimer = null;
+    function showCalcToast(msg) {
+      const toast = document.getElementById('calcToast');
+      const toastMsg = document.getElementById('calcToastMsg');
+      if (!toast) return;
+      if (toastMsg && msg) toastMsg.innerText = msg;
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // ĐIỀU KHIỂN DRAWER SIDEBAR TRÊN ĐIỆN THOẠI (CÓ KHÓA CUỘN NỀN)
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('navSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (sidebar && overlay) {
+        const isOpen = sidebar.classList.toggle('open');
+        overlay.classList.toggle('open', isOpen);
+        document.body.classList.toggle('drawer-open', isOpen);
+      }
+    }
+
+    function closeMobileSidebar() {
+      const sidebar = document.getElementById('navSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (sidebar && overlay) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+        document.body.classList.remove('drawer-open');
+      }
+    }
+
+    // BẬT/TẮT BẢNG THÔNG SỐ MÔ HÌNH 3D TRÊN ĐIỆN THOẠI
+    function toggleModelStatusMobile() {
+      const content = document.getElementById('modelStatusContent');
+      const btn = document.getElementById('btnToggleModelStatus');
+      if (!content) return;
+      const isShown = content.classList.toggle('show');
+      if (btn) {
+        btn.classList.toggle('expanded', isShown);
+        btn.setAttribute('aria-expanded', isShown ? 'true' : 'false');
+      }
+      // Cập nhật lại khung nhìn Three.js khi layout thay đổi chiều cao
+      requestAnimationFrame(() => {
+        onWindowResize();
+      });
+    }
+
+    // CHUYỂN TAB ĐIỀU HƯỚNG DỌC GỌN GÀNG (ĐỒNG BỘ CẢ DESKTOP VÀ MOBILE)
+    function switchMainTab(tabId) {
+      document.querySelectorAll('.tab-content-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelectorAll('.mobile-nav-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      const targetPanel = document.getElementById(tabId);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
+
+      // Tự động đóng sidebar drawer nếu đang mở trên điện thoại
+      closeMobileSidebar();
+
+      if (tabId === 'tab_3d') {
+        document.getElementById('tabBtn_3d')?.classList.add('active');
+        document.getElementById('mNav_3d')?.classList.add('active');
+        requestAnimationFrame(() => {
+          onWindowResize();
+          if (typeof update3DScene === 'function') {
+            update3DScene();
+          }
+        });
+      } else if (tabId === 'tab_input') {
+        document.getElementById('tabBtn_input')?.classList.add('active');
+        document.getElementById('mNav_input')?.classList.add('active');
+      } else if (tabId === 'tab_result') {
+        document.getElementById('tabBtn_result')?.classList.add('active');
+        document.getElementById('mNav_result')?.classList.add('active');
+        if (myChart) {
+          requestAnimationFrame(() => {
+            myChart.resize();
+          });
+        }
+      }
+
+      // Cuộn nhẹ lên đầu nội dung tab
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // DỮ LIỆU ĐỊA TẦNG ĐỘNG & BẢNG HỆ SỐ RỖNG e - p NÂNG CẤP
+    // Mặc định gồm 5 cấp áp lực thực nghiệm: 0, 100, 200, 300, 400 kPa
+    let epSteps = [0, 100, 200, 300, 400];
+
+    let soilLayersData = [
+      {
+        name: "Lớp 1",
+        h: 0.93,
+        gamma: 15.11,
+        sat: 16.88,
+        E: 7013,
+        e0: 0.990,
+        e100: 0.954,
+        e200: 0.918,
+        e300: 0.872,
+        e400: 0.864,
+        ep_dict: { 0: 0.990, 100: 0.954, 200: 0.918, 300: 0.872, 400: 0.864 }
+      },
+      {
+        name: "Lớp 2",
+        h: 1.56,
+        gamma: 18.31,
+        sat: 19.33,
+        E: 25390,
+        e0: 0.940,
+        e100: 0.874,
+        e200: 0.808,
+        e300: 0.778,
+        e400: 0.776,
+        ep_dict: { 0: 0.940, 100: 0.874, 200: 0.808, 300: 0.778, 400: 0.776 }
+      },
+      {
+        name: "Lớp 3",
+        h: 23.76,
+        gamma: 19.04,
+        sat: 20.39,
+        E: 25800,
+        e0: 0.745,
+        e100: 0.705,
+        e200: 0.665,
+        e300: 0.657,
+        e400: 0.656,
+        ep_dict: { 0: 0.745, 100: 0.705, 200: 0.665, 300: 0.657, 400: 0.656 }
+      }
+    ];
+
+    const GENERAL_SOIL_PARAMS = [
+      { id: "h", label: "Bề dày lớp đất", sym: "h", unit: "m" },
+      { id: "gamma", label: "Dung trọng tự nhiên", sym: "γ", unit: "kN/m³" },
+      { id: "sat", label: "Dung trọng bão hòa", sym: "γ_sat", unit: "kN/m³" },
+      { id: "E", label: "Mô-đun biến dạng", sym: "E", unit: "kN/m²" }
+    ];
+
+    const BANG_BOUSSINESQ = {
+      col_lb: [1.0, 1.2, 1.4, 1.5, 1.6, 1.8, 2.0, 3.0, 4.0, 5.0, 10.0],
+      row_zb: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.4, 2.8, 3.2, 3.6, 4.0, 5.0],
+      matrix: [
+        [1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000],
+        [0.960, 0.968, 0.972, 0.973, 0.974, 0.975, 0.976, 0.977, 0.977, 0.977, 0.977],
+        [0.800, 0.830, 0.848, 0.854, 0.859, 0.866, 0.870, 0.878, 0.880, 0.881, 0.881],
+        [0.606, 0.651, 0.682, 0.694, 0.703, 0.717, 0.727, 0.748, 0.753, 0.754, 0.755],
+        [0.449, 0.496, 0.532, 0.546, 0.558, 0.578, 0.593, 0.627, 0.636, 0.639, 0.642],
+        [0.336, 0.379, 0.414, 0.428, 0.441, 0.463, 0.481, 0.525, 0.540, 0.545, 0.549],
+        [0.257, 0.294, 0.325, 0.339, 0.352, 0.374, 0.392, 0.443, 0.462, 0.470, 0.477],
+        [0.201, 0.232, 0.260, 0.272, 0.284, 0.304, 0.322, 0.377, 0.400, 0.410, 0.419],
+        [0.160, 0.187, 0.210, 0.221, 0.232, 0.251, 0.267, 0.322, 0.348, 0.360, 0.373],
+        [0.131, 0.153, 0.173, 0.183, 0.192, 0.209, 0.224, 0.278, 0.305, 0.319, 0.335],
+        [0.108, 0.127, 0.145, 0.153, 0.161, 0.176, 0.190, 0.241, 0.269, 0.285, 0.303],
+        [0.077, 0.091, 0.105, 0.111, 0.118, 0.130, 0.141, 0.185, 0.213, 0.230, 0.254],
+        [0.058, 0.069, 0.079, 0.084, 0.089, 0.099, 0.108, 0.146, 0.172, 0.189, 0.217],
+        [0.045, 0.053, 0.062, 0.066, 0.070, 0.077, 0.085, 0.117, 0.141, 0.158, 0.189],
+        [0.036, 0.043, 0.049, 0.053, 0.056, 0.062, 0.068, 0.096, 0.117, 0.133, 0.166],
+        [0.029, 0.035, 0.040, 0.043, 0.046, 0.051, 0.056, 0.079, 0.098, 0.113, 0.147],
+        [0.019, 0.022, 0.026, 0.028, 0.030, 0.033, 0.037, 0.053, 0.067, 0.079, 0.112]
+      ]
+    };
+
+    function parseNum(val) {
+      if (val === null || val === undefined) return NaN;
+      if (typeof val === 'number') return (!Number.isFinite(val) || isNaN(val)) ? NaN : val;
+      var s = String(val).trim().replace(/\s+/g, '').replace(',', '.');
+      if (s === '' || s.toLowerCase() === 'infinity' || s.toLowerCase() === '-infinity' || s.toLowerCase() === '+infinity' || s.toLowerCase() === 'nan') return NaN;
+      if (!/^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(s)) {
+        return NaN;
+      }
+      var n = Number(s);
+      return (!Number.isFinite(n) || isNaN(n)) ? NaN : n;
+    }
+
+    function interp1D(x, xArr, yArr) {
+      if (x <= xArr[0]) return yArr[0];
+      if (x >= xArr[xArr.length - 1]) return yArr[yArr.length - 1];
+      for (let i = 0; i < xArr.length - 1; i++) {
+        if (x >= xArr[i] && x <= xArr[i + 1]) {
+          let t = (x - xArr[i]) / (xArr[i + 1] - xArr[i]);
+          return yArr[i] + t * (yArr[i + 1] - yArr[i]);
+        }
+      }
+      return yArr[yArr.length - 1];
+    }
+
+    function congThucBoussinesqTam(zb, lb) {
+      if (zb <= 0) return 1.0;
+      let m = lb / (2.0 * zb);
+      let n = 0.5 / zb;
+      let m2 = m * m;
+      let n2 = n * n;
+      let R = Math.sqrt(m2 + n2 + 1.0);
+      let t1 = (m * n / R) * ((m2 + n2 + 2.0) / ((m2 + 1.0) * (n2 + 1.0)));
+      let arg = (m * n) / Math.sqrt((m2 + 1.0) * (n2 + 1.0));
+      arg = Math.max(-1.0, Math.min(1.0, arg));
+      let t2 = Math.asin(arg);
+      let k_goc = (t1 + t2) / (2.0 * Math.PI);
+      return Math.min(1.0, Math.max(0.0, 4.0 * k_goc));
+    }
+
+    function traBangBoussinesq(zb, lb) {
+      if (zb <= 0) return 1.0;
+      let col_lb = BANG_BOUSSINESQ.col_lb;
+      let row_zb = BANG_BOUSSINESQ.row_zb;
+      let matrix = BANG_BOUSSINESQ.matrix;
+
+      if (lb > 10.0 || zb > 5.0) {
+        let k_calc = congThucBoussinesqTam(zb, lb);
+        return Math.min(1.0, Math.max(0.0, k_calc));
+      }
+
+      let k_hang = [];
+      for (let r = 0; r < row_zb.length; r++) {
+        k_hang.push(interp1D(lb, col_lb, matrix[r]));
+      }
+      let k_interp = interp1D(zb, row_zb, k_hang);
+      return Math.min(1.0, Math.max(0.0, k_interp));
+    }
+
+    // NỘI SUY TUYẾN TÍNH THEO CÁC ĐIỂM THỰC NGHIỆM TRÊN ĐƯỜNG CONG e - p
+    // Không dùng công thức giả định e0 = e100 + (e100 - e200)
+    function noiSuyHeSoRong(p, e_dict, stepsList) {
+      if (!stepsList || stepsList.length === 0) {
+        stepsList = (typeof epSteps !== 'undefined' && epSteps.length > 0)
+          ? epSteps
+          : Object.keys(e_dict).map(Number).sort((a, b) => a - b);
+      }
+
+      const minP = stepsList[0];
+      const maxP = stepsList[stepsList.length - 1];
+
+      // Nếu áp lực <= cấp nhỏ nhất (thường là p <= 0): trả về e tại minP (e0)
+      if (p <= minP) {
+        return e_dict[minP];
+      }
+
+      // Nội suy trong dải thực nghiệm [p_i, p_{i+1}]
+      for (let i = 0; i < stepsList.length - 1; i++) {
+        const p1 = stepsList[i];
+        const p2 = stepsList[i + 1];
+        if (p >= p1 && p <= p2) {
+          if (p2 === p1) return e_dict[p1];
+          const e1 = e_dict[p1];
+          const e2 = e_dict[p2];
+          return e1 - ((e1 - e2) / (p2 - p1)) * (p - p1);
+        }
+      }
+
+      // NGOẠI SUY TUYẾN TÍNH KHI ÁP LỰC VƯỢT QUÁ CẤP CAO NHẤT maxP
+      const p_last = maxP;
+      const p_prev = stepsList[stepsList.length - 2];
+      const e_last = e_dict[p_last];
+      const e_prev = e_dict[p_prev];
+
+      // Độ dốc đoạn nạp tải cuối
+      let slope = (e_prev - e_last) / (p_last - p_prev);
+      if (slope <= 0.00005) {
+        if (stepsList.length >= 3) {
+          const p_prev2 = stepsList[stepsList.length - 3];
+          slope = Math.max(0.00005, (e_dict[p_prev2] - e_last) / (p_last - p_prev2));
+        } else {
+          slope = 0.00005;
+        }
+      }
+
+      let e_extrap = e_last - slope * (p - p_last);
+      return Math.max(0.20, e_extrap); // Cận dưới vật lý tối thiểu
+    }
+
+    function renderSoilTableHeaders() {
+      const headerRow = document.getElementById('soilHeaderRow');
+      if (!headerRow) return;
+      headerRow.innerHTML = `
+        <th style="text-align: left; min-width: 200px;">Chỉ tiêu cơ lý địa chất</th>
+        <th>Ký hiệu</th>
+        <th>Đơn vị</th>
+      `;
+      const raw_h_inp = parseNum(document.getElementById('inp_h')?.value);
+      const footDepth = !isNaN(raw_h_inp) ? raw_h_inp : (globalCalculationData?.h ?? null);
+      let cumDepth = 0;
+      soilLayersData.forEach((lyr, idx) => {
+        const layerTop = cumDepth;
+        cumDepth += lyr.h;
+        const layerBottom = cumDepth;
+        const isLast = (idx === soilLayersData.length - 1);
+        let baseName = lyr.name.replace(/\s*\(Đặt móng\)/g, '').trim();
+        lyr.name = baseName;
+        let displayName = baseName;
+
+        let isFootingLayer = false;
+        if (footDepth !== null) {
+          if (isLast) {
+            isFootingLayer = (footDepth >= layerTop - 0.0001);
+          } else {
+            isFootingLayer = (footDepth >= layerTop - 0.0001 && footDepth < layerBottom - 0.0001);
+          }
+        }
+
+        if (isFootingLayer) {
+          displayName += ' (Đặt móng)';
+        }
+        const th = document.createElement('th');
+        th.innerHTML = `${displayName} <br><span style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">(Lớp ${idx + 1})</span>`;
+        headerRow.appendChild(th);
+      });
+    }
+
+    // Biến lưu trạng thái thu gọn bảng e-p trên điện thoại
+    let isEpCollapsedMobile = false;
+
+    function toggleEpTableMobile() {
+      isEpCollapsedMobile = !isEpCollapsedMobile;
+      const rows = document.querySelectorAll('.ep-row');
+      rows.forEach(r => {
+        r.classList.toggle('is-collapsed-mobile', isEpCollapsedMobile);
+      });
+      const lbl = document.getElementById('labelToggleEp');
+      const arrow = document.getElementById('arrowToggleEp');
+      if (lbl) {
+        lbl.innerText = isEpCollapsedMobile
+          ? `Mở rộng ${epSteps.length} cấp e - p`
+          : `Thu gọn e - p`;
+      }
+      if (arrow) {
+        arrow.className = isEpCollapsedMobile
+          ? 'fa-solid fa-chevron-down'
+          : 'fa-solid fa-chevron-up';
+      }
+    }
+
+    function renderSoilTable() {
+      renderSoilTableHeaders();
+      const body = document.getElementById('soilTableBody');
+      if (!body) return;
+      body.innerHTML = '';
+
+      // 1. Render nhóm thông số cơ bản (h, gamma, gamma_sat, E)
+      GENERAL_SOIL_PARAMS.forEach(param => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: left; font-weight: 600;">${param.label}</td>
+          <td><i>${param.sym}</i></td>
+          <td>${param.unit}</td>
+        `;
+
+        soilLayersData.forEach((lyr, idx) => {
+          const td = document.createElement('td');
+          const val = lyr[param.id] !== undefined ? lyr[param.id] : '';
+          td.innerHTML = `<input type="text" id="soil_${param.id}_${idx}" value="${val}" onchange="updateSoilDataFromInputs()">`;
+          tr.appendChild(td);
+        });
+
+        body.appendChild(tr);
+      });
+
+      // 2. Render hàng phân định khu vực Đường cong nén lún e - p (có nút thu gọn cho điện thoại)
+      const trSection = document.createElement('tr');
+      trSection.className = 'ep-table-header-row';
+      trSection.onclick = toggleEpTableMobile;
+      const colSpanTotal = soilLayersData.length + 3;
+      const stepsDesc = epSteps.map(p => p === 0 ? 'e₀ (0 kPa)' : `e${p} (${p} kPa)`).join(', ');
+
+      trSection.innerHTML = `
+        <td colspan="${colSpanTotal}">
+          <div class="ep-table-header-content">
+            <div class="ep-table-header-title">
+              <i class="fa-solid fa-chart-line"></i>
+              <span>ĐƯỜNG CONG NÉN LÚN e - p (${epSteps.length} CẤP: ${stepsDesc})</span>
+            </div>
+            <div class="ep-mobile-toggle-btn" title="Chạm để mở rộng hoặc thu gọn nhóm e-p">
+              <i class="fa-solid ${isEpCollapsedMobile ? 'fa-chevron-down' : 'fa-chevron-up'}" id="arrowToggleEp"></i>
+              <span id="labelToggleEp">${isEpCollapsedMobile ? `Mở rộng ${epSteps.length} cấp e - p` : `Thu gọn e - p`}</span>
+            </div>
+          </div>
+        </td>
+      `;
+      body.appendChild(trSection);
+
+      // 3. Render các hàng cấp áp lực e - p động
+      epSteps.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = 'ep-row' + (isEpCollapsedMobile ? ' is-collapsed-mobile' : '');
+
+        const labelText = (p === 0)
+          ? `Hệ số rỗng ban đầu e₀ (p = 0 kPa)`
+          : `Hệ số rỗng e${p} (p = ${p} kPa)`;
+        const symText = (p === 0) ? `e₀` : `e${p}`;
+
+        // Nút xóa cấp áp lực (cho phép xóa nếu còn nhiều hơn 2 điểm e-p)
+        const delBtnHtml = (epSteps.length > 2)
+          ? `<button type="button" class="btn-del-ep" onclick="event.stopPropagation(); xoaCapApLuc(${p})" title="Xóa cấp áp lực ${p} kPa khỏi toàn bộ địa tầng">✕</button>`
+          : ``;
+
+        tr.innerHTML = `
+          <td style="text-align: left; font-weight: 600; color: #93c5fd;">
+            ${labelText}
+          </td>
+          <td><i>${symText}</i></td>
+          <td>
+            - ${delBtnHtml}
+          </td>
+        `;
+
+        soilLayersData.forEach((lyr, idx) => {
+          const td = document.createElement('td');
+          if (!lyr.ep_dict) lyr.ep_dict = {};
+          const val = lyr.ep_dict[p] !== undefined ? lyr.ep_dict[p] : '';
+          td.innerHTML = `<input type="text" id="soil_ep_${p}_${idx}" value="${val}" onchange="updateSoilDataFromInputs()">`;
+          tr.appendChild(td);
+        });
+
+        body.appendChild(tr);
+      });
+    }
+
+    function updateSoilDataFromInputs() {
+      soilLayersData.forEach((lyr, idx) => {
+        GENERAL_SOIL_PARAMS.forEach(param => {
+          const el = document.getElementById(`soil_${param.id}_${idx}`);
+          if (el) {
+            lyr[param.id] = parseNum(el.value);
+          }
+        });
+
+        if (!lyr.ep_dict) lyr.ep_dict = {};
+        epSteps.forEach(p => {
+          const el = document.getElementById(`soil_ep_${p}_${idx}`);
+          if (el) {
+            const val = parseNum(el.value);
+            lyr.ep_dict[p] = val;
+            // Đồng bộ các thuộc tính tương thích ngược
+            if (p === 0) lyr.e0 = val;
+            if (p === 100) lyr.e100 = val;
+            if (p === 200) lyr.e200 = val;
+            if (p === 300) lyr.e300 = val;
+            if (p === 400) lyr.e400 = val;
+          }
+        });
+      });
+      tinhToanDoLun();
+    }
+
+    function themLopDat() {
+      const newIdx = soilLayersData.length + 1;
+      const lastLyr = soilLayersData[soilLayersData.length - 1];
+
+      let newEpDict = {};
+      epSteps.forEach(p => {
+        if (lastLyr && lastLyr.ep_dict && lastLyr.ep_dict[p] !== undefined) {
+          newEpDict[p] = lastLyr.ep_dict[p];
+        } else {
+          // Giá trị mẫu đất thực tế, không dùng công thức tự tạo e0 = e100 + (e100 - e200)
+          if (p === 0) newEpDict[p] = 0.800;
+          else if (p === 100) newEpDict[p] = 0.750;
+          else if (p === 200) newEpDict[p] = 0.700;
+          else if (p === 300) newEpDict[p] = 0.670;
+          else if (p === 400) newEpDict[p] = 0.650;
+          else newEpDict[p] = Math.max(0.30, 0.800 - 0.0003 * p);
+        }
+      });
+
+      soilLayersData.push({
+        name: `Lớp ${newIdx}`,
+        h: 5.0,
+        gamma: lastLyr ? lastLyr.gamma : 19.0,
+        sat: lastLyr ? lastLyr.sat : 20.0,
+        E: lastLyr ? lastLyr.E : 25000,
+        e0: newEpDict[0] || 0.800,
+        e100: newEpDict[100] || 0.750,
+        e200: newEpDict[200] || 0.700,
+        e300: newEpDict[300] || 0.670,
+        e400: newEpDict[400] || 0.650,
+        ep_dict: newEpDict
+      });
+
+      renderSoilTable();
+      tinhToanDoLun();
+    }
+
+    function xoaLopDatCuoi() {
+      if (soilLayersData.length <= 1) {
+        alert("Cần tối thiểu 1 lớp đất nền để tính toán!");
+        return;
+      }
+      soilLayersData.pop();
+      renderSoilTable();
+      tinhToanDoLun();
+    }
+
+    // MODAL VÀ CÁC THAO TÁC QUẢN LÝ CẤP ÁP LỰC e - p
+    function moModalThemCapApLuc() {
+      const modal = document.getElementById('modalAddEp');
+      const container = document.getElementById('modalEpLayersContainer');
+      const txtSteps = document.getElementById('txtCurrentEpSteps');
+      if (txtSteps) {
+        txtSteps.innerText = epSteps.map(p => p === 0 ? 'e₀ (0)' : p).join(', ');
+      }
+      if (container) {
+        container.innerHTML = '';
+        soilLayersData.forEach((lyr, idx) => {
+          const div = document.createElement('div');
+          div.className = 'ep-layer-row-input';
+          div.innerHTML = `
+            <label>
+              <span><strong>${lyr.name}</strong>: Hệ số rỗng e tại p mới:</span>
+              <span class="hint-interpolated" id="hint_interp_${idx}">Gợi ý: --</span>
+            </label>
+            <input type="text" id="inp_new_e_${idx}" class="form-control font-mono" placeholder="Nhập giá trị e > 0">
+          `;
+          container.appendChild(div);
+        });
+      }
+      const inpP = document.getElementById('inp_new_p');
+      if (inpP) inpP.value = '';
+      if (modal) modal.style.display = 'flex';
+      if (inpP) inpP.focus();
+    }
+
+    function dongModalThemCapApLuc() {
+      const modal = document.getElementById('modalAddEp');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function goiYHeSoRongChoLopDat() {
+      const inpP = document.getElementById('inp_new_p');
+      if (!inpP) return;
+      const p = parseNum(inpP.value);
+      if (isNaN(p) || p < 0) return;
+
+      soilLayersData.forEach((lyr, idx) => {
+        const inpE = document.getElementById(`inp_new_e_${idx}`);
+        const hintSpan = document.getElementById(`hint_interp_${idx}`);
+        if (!lyr.ep_dict) return;
+        const e_suggest = noiSuyHeSoRong(p, lyr.ep_dict, epSteps);
+        if (hintSpan) {
+          hintSpan.innerText = `Nội suy gợi ý: ${e_suggest.toFixed(4)}`;
+        }
+        if (inpE && (!inpE.value || inpE.dataset.autofilled === 'true')) {
+          inpE.value = e_suggest.toFixed(3);
+          inpE.dataset.autofilled = 'true';
+        }
+      });
+    }
+
+    function xacNhanThemCapApLuc() {
+      const inpP = document.getElementById('inp_new_p');
+      if (!inpP) return;
+      const p = parseNum(inpP.value);
+
+      if (isNaN(p) || p < 0) {
+        alert("Áp lực p phải là số không âm (p ≥ 0 kPa)!");
+        inpP.focus();
+        return;
+      }
+
+      if (epSteps.includes(p)) {
+        alert(`Cấp áp lực p = ${p} kPa đã tồn tại trong bảng! Vui lòng nhập cấp áp lực khác hoặc sửa trực tiếp giá trị trong bảng.`);
+        inpP.focus();
+        return;
+      }
+
+      let newEValues = [];
+      for (let idx = 0; idx < soilLayersData.length; idx++) {
+        const lyr = soilLayersData[idx];
+        const inpE = document.getElementById(`inp_new_e_${idx}`);
+        const e_val = inpE ? parseNum(inpE.value) : NaN;
+        if (isNaN(e_val) || e_val <= 0) {
+          alert(`Hệ số rỗng e của ${lyr.name} chưa nhập hoặc không phải số dương lớn hơn 0!`);
+          if (inpE) inpE.focus();
+          return;
+        }
+        newEValues.push({ idx, e_val });
+      }
+
+      // Thêm p vào epSteps và tự động sắp xếp tăng dần
+      epSteps.push(p);
+      epSteps.sort((a, b) => a - b);
+
+      newEValues.forEach(item => {
+        const lyr = soilLayersData[item.idx];
+        if (!lyr.ep_dict) lyr.ep_dict = {};
+        lyr.ep_dict[p] = item.e_val;
+        if (p === 0) lyr.e0 = item.e_val;
+        if (p === 100) lyr.e100 = item.e_val;
+        if (p === 200) lyr.e200 = item.e_val;
+        if (p === 300) lyr.e300 = item.e_val;
+        if (p === 400) lyr.e400 = item.e_val;
+      });
+
+      dongModalThemCapApLuc();
+      renderSoilTable();
+      tinhToanDoLun();
+      showCalcToast(`Đã thêm cấp áp lực p = ${p} kPa`);
+    }
+
+    function xoaCapApLuc(p) {
+      if (epSteps.length <= 2) {
+        alert(`Không thể xóa cấp áp lực p = ${p} kPa! Đường cong nén e - p cần tối thiểu 2 điểm thực nghiệm để có thể nội suy tuyến tính.`);
+        return;
+      }
+
+      const pDesc = (p === 0) ? `e₀ (p = 0 kPa)` : `p = ${p} kPa`;
+      if (!confirm(`Bạn có chắc chắn muốn xóa cấp áp lực ${pDesc} khỏi toàn bộ các lớp đất?`)) {
+        return;
+      }
+
+      epSteps = epSteps.filter(item => item !== p);
+      soilLayersData.forEach(lyr => {
+        if (lyr.ep_dict) {
+          delete lyr.ep_dict[p];
+        }
+      });
+
+      renderSoilTable();
+      tinhToanDoLun();
+      showCalcToast(`Đã xóa cấp áp lực ${pDesc}`);
+    }
+
+    let myChart = null;
+    let globalCalculationData = null;
+
+    function tinhToanDoLun() {
+      // 0. Luôn đồng bộ dữ liệu mới nhất từ các ô input trong bảng địa tầng
+      if (Array.isArray(soilLayersData)) {
+        soilLayersData.forEach((lyr, idx) => {
+          GENERAL_SOIL_PARAMS.forEach(param => {
+            const el = document.getElementById(`soil_${param.id}_${idx}`);
+            if (el) {
+              lyr[param.id] = parseNum(el.value);
+            }
+          });
+          if (!lyr.ep_dict) lyr.ep_dict = {};
+          epSteps.forEach(p => {
+            const el = document.getElementById(`soil_ep_${p}_${idx}`);
+            if (el) {
+              const val = parseNum(el.value);
+              lyr.ep_dict[p] = val;
+              if (p === 0) lyr.e0 = val;
+              if (p === 100) lyr.e100 = val;
+              if (p === 200) lyr.e200 = val;
+              if (p === 300) lyr.e300 = val;
+              if (p === 400) lyr.e400 = val;
+            }
+          });
+        });
+      }
+
+      // 1. Đọc và chuẩn hóa dữ liệu đầu vào
+      let raw_b = parseNum(document.getElementById('inp_b').value);
+      let raw_l = parseNum(document.getElementById('inp_l').value);
+      let raw_h = parseNum(document.getElementById('inp_h').value);
+      let raw_N = parseNum(document.getElementById('inp_N').value);
+      let raw_M = parseNum(document.getElementById('inp_M').value);
+      let raw_gamma_tb = parseNum(document.getElementById('inp_gamma_tb').value);
+      let raw_gw = parseNum(document.getElementById('inp_gw').value);
+      let raw_S_limit = parseNum(document.getElementById('inp_S_limit').value);
+
+      let evalBanner = document.getElementById('evalBanner');
+
+      // Helper báo lỗi nhập liệu chung
+      function showInputValidationError(title, msg) {
+        document.getElementById('resultSection').style.display = 'block';
+        evalBanner.className = 'eval-box eval-fail';
+        evalBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation fa-xl"></i> <div><strong>${title}</strong><br><span style="font-size: 0.95rem;">${msg}</span></div>`;
+        const badgeS = document.getElementById('tab_s_badge');
+        if (badgeS) {
+          badgeS.innerText = 'Lỗi nhập liệu';
+          badgeS.style.color = '#f87171';
+        }
+        document.getElementById('res_total_S').innerText = 'Lỗi nhập liệu';
+        document.getElementById('res_total_S').style.color = '#f87171';
+        document.getElementById('res_Hc').innerText = '--';
+        document.getElementById('pointsTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #fca5a5; padding: 16px;">${title}: ${msg}</td></tr>`;
+        document.getElementById('settlementTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #fca5a5; padding: 16px;">Vui lòng chỉnh sửa các thông số nhập liệu hợp lệ để tiếp tục tính toán.</td></tr>`;
+      }
+
+      // Chặn chuỗi sai định dạng hoặc số âm/bằng 0 cho kích thước móng
+      if (isNaN(raw_b) || raw_b <= 0.05 || isNaN(raw_l) || raw_l <= 0.05) {
+        showInputValidationError('LỖI NHẬP LIỆU: KÍCH THƯỚC MÓNG KHÔNG HỢP LỆ!', 'Bề rộng (b) và chiều dài (l) móng phải là số dương hợp lệ (ví dụ: b = 2.0m, l = 3.0m). Chuỗi chứa chữ cái hoặc số âm không được chấp nhận.');
+        return;
+      }
+
+      // Chặn tải trọng kéo/trồi (N <= 0)
+      if (isNaN(raw_N) || raw_N <= 0) {
+        showInputValidationError('LỖI TẢI TRỌNG: TẢI TRỌNG N KHÔNG HỢP LỆ (N ≤ 0)!', 'Phương pháp tính lún chỉ áp dụng cho móng chịu nén lún (N > 0). Khi N ≤ 0 móng rơi vào trạng thái kéo/nhổ/trồi móng, không áp dụng công thức tính lún e - p.');
+        return;
+      }
+
+      // Kiểm tra mô-men uốn M (không được chứa chữ cái, không vô hạn)
+      if (isNaN(raw_M)) {
+        showInputValidationError('LỖI NHẬP LIỆU: MÔ-MEN UỐN M KHÔNG HỢP LỆ!', 'Mô-men uốn đáy cột M phải là số hợp lệ (ví dụ: 259.0 kN·m hoặc 0 nếu đúng tâm). Không được bỏ trống hoặc nhập ký tự chữ.');
+        return;
+      }
+
+      // Kiểm tra độ sâu móng h
+      if (isNaN(raw_h) || raw_h < 0) {
+        showInputValidationError('LỖI NHẬP LIỆU: ĐỘ SÂU CHÔN MÓNG KHÔNG HỢP LỆ!', 'Độ sâu chôn móng h (Df) phải là số không âm (h ≥ 0).');
+        return;
+      }
+
+      // Kiểm tra dung trọng trung bình móng & đất phủ gamma_tb (không thay ngầm mặc định)
+      if (isNaN(raw_gamma_tb) || raw_gamma_tb <= 0) {
+        showInputValidationError('LỖI NHẬP LIỆU: DUNG TRỌNG TRUNG BÌNH γ_tb KHÔNG HỢP LỆ!', 'Dung trọng trung bình móng và đất phủ γ_tb phải là số dương hợp lệ (ví dụ: 20.0 kN/m³). Không được bỏ trống hoặc nhập chữ cái.');
+        return;
+      }
+
+      // Kiểm tra mực nước ngầm GW
+      if (isNaN(raw_gw) || raw_gw < 0) {
+        showInputValidationError('LỖI NHẬP LIỆU: MỰC NƯỚC NGẦM KHÔNG HỢP LỆ!', 'Mực nước ngầm GW phải là số không âm (GW ≥ 0 m tính từ mặt đất).');
+        return;
+      }
+
+      // Kiểm tra độ lún giới hạn
+      if (isNaN(raw_S_limit) || raw_S_limit <= 0) {
+        showInputValidationError('LỖI NHẬP LIỆU: ĐỘ LÚN GIỚI HẠN KHÔNG HỢP LỆ!', 'Độ lún giới hạn [S] phải là số dương (ví dụ: 8.0 cm).');
+        return;
+      }
+
+      // Chuẩn hóa cạnh móng: b_calc luôn là cạnh ngắn, l_calc luôn là cạnh dài để tra bảng Boussinesq chuẩn
+      let b_calc = Math.min(raw_b, raw_l);
+      let l_calc = Math.max(raw_b, raw_l);
+      let b = raw_b;
+      let l = raw_l;
+
+      let h = raw_h;
+      let N_tc = raw_N;
+      let M_tc = Math.abs(raw_M);
+      let gamma_tb = raw_gamma_tb;
+      let GW_depth = raw_gw;
+      let S_limit = raw_S_limit;
+
+      // KIỂM TRA CHẶT CHẼ DỮ LIỆU ĐỊA TẦNG VÀ ĐƯỜNG NÉN e - p (Không tự thay mặc định ngầm)
+      if (!soilLayersData || soilLayersData.length === 0) {
+        showInputValidationError('LỖI ĐỊA TẦNG: CHƯA CÓ LỚP ĐẤT NỀN!', 'Cần tối thiểu 1 lớp đất nền để thực hiện tính toán.');
+        return;
+      }
+
+      let layers = [];
+      let z_acc = 0.0;
+
+      for (let idx = 0; idx < soilLayersData.length; idx++) {
+        let lyrRaw = soilLayersData[idx];
+        let lyrName = lyrRaw.name ? lyrRaw.name.replace(/\s*\(Đặt móng\)/g, '').trim() : `Lớp ${idx + 1}`;
+
+        // Kiểm tra bề dày h
+        if (isNaN(lyrRaw.h) || lyrRaw.h <= 0) {
+          showInputValidationError(`LỖI NHẬP LIỆU ĐỊA TẦNG (${lyrName})`, `Bề dày lớp đất (h) chưa nhập hoặc không phải số dương hợp lệ (yêu cầu h > 0 m).`);
+          return;
+        }
+
+        // Kiểm tra dung trọng tự nhiên gamma
+        if (isNaN(lyrRaw.gamma) || lyrRaw.gamma <= 0) {
+          showInputValidationError(`LỖI DUNG TRỌNG TỰ NHIÊN (${lyrName})`, `Dung trọng tự nhiên (γ) chưa nhập hoặc không phải số dương (yêu cầu γ > 0 kN/m³).`);
+          return;
+        }
+
+        // Kiểm tra dung trọng bão hòa gamma_sat
+        if (isNaN(lyrRaw.sat) || lyrRaw.sat <= 0) {
+          showInputValidationError(`LỖI DUNG TRỌNG BÃO HÒA (${lyrName})`, `Dung trọng bão hòa (γ_sat) chưa nhập hoặc không phải số dương.`);
+          return;
+        }
+
+        // Kiểm tra điều kiện vật lý đẩy nổi: gamma_sat > gamma_nuoc (10.0 kN/m³)
+        if (lyrRaw.sat <= 10.0) {
+          showInputValidationError(`LỖI VẬT LÝ DUNG TRỌNG BÃO HÒA (${lyrName})`, `Dung trọng bão hòa γ_sat = ${lyrRaw.sat} kN/m³ nhỏ hơn hoặc bằng trọng lượng riêng của nước (10.0 kN/m³). Để xuất hiện dung trọng đẩy nổi γ' = γ_sat - 10 > 0, bắt buộc γ_sat > 10.0 kN/m³.`);
+          return;
+        }
+
+        // Kiểm tra điều kiện vật lý: gamma_sat >= gamma
+        if (lyrRaw.sat < lyrRaw.gamma) {
+          showInputValidationError(`LỖI VẬT LÝ DUNG TRỌNG (${lyrName})`, `Dung trọng bão hòa nước (γ_sat = ${lyrRaw.sat} kN/m³) không thể nhỏ hơn dung trọng tự nhiên chưa bão hòa (γ = ${lyrRaw.gamma} kN/m³)!`);
+          return;
+        }
+
+        // Kiểm tra mô-đun biến dạng E
+        if (isNaN(lyrRaw.E) || lyrRaw.E <= 0) {
+          showInputValidationError(`LỖI MÔ-ĐUN BIẾN DẠNG (${lyrName})`, `Mô-đun biến dạng (E) chưa nhập hoặc không phải số dương (yêu cầu E > 0 kN/m²).`);
+          return;
+        }
+
+        // Kiểm tra tối thiểu 2 điểm e - p để nội suy
+        if (!epSteps || epSteps.length < 2) {
+          showInputValidationError(`LỖI ĐƯỜNG NÉN e - p (${lyrName})`, `Cần tối thiểu 2 cấp áp lực e - p để thực hiện nội suy tuyến tính tính lún.`);
+          return;
+        }
+
+        // Đảm bảo ep_dict tồn tại
+        if (!lyrRaw.ep_dict) {
+          lyrRaw.ep_dict = {};
+        }
+
+        // Kiểm tra từng cấp áp lực p và giá trị e tương ứng (yêu cầu e > 0)
+        let e_dict = {};
+        for (let sIdx = 0; sIdx < epSteps.length; sIdx++) {
+          let pVal = epSteps[sIdx];
+          let eVal = lyrRaw.ep_dict[pVal];
+          if (eVal === undefined || isNaN(eVal)) {
+            if (pVal === 0 && lyrRaw.e0 !== undefined) eVal = lyrRaw.e0;
+            else if (pVal === 100 && lyrRaw.e100 !== undefined) eVal = lyrRaw.e100;
+            else if (pVal === 200 && lyrRaw.e200 !== undefined) eVal = lyrRaw.e200;
+            else if (pVal === 300 && lyrRaw.e300 !== undefined) eVal = lyrRaw.e300;
+            else if (pVal === 400 && lyrRaw.e400 !== undefined) eVal = lyrRaw.e400;
+          }
+
+          let pLabel = (pVal === 0) ? "e₀ (p = 0 kPa)" : `p = ${pVal} kPa`;
+          if (isNaN(eVal) || eVal <= 0) {
+            showInputValidationError(
+              `LỖI HỆ SỐ RỖNG (${lyrName})`,
+              `Hệ số rỗng tại cấp áp lực ${pLabel} chưa nhập hoặc không phải số dương lớn hơn 0 (giá trị hiện tại: ${eVal === undefined ? 'trống' : eVal})!`
+            );
+            return;
+          }
+          e_dict[pVal] = eVal;
+        }
+
+        // Kiểm tra bắt buộc: e phải giảm hoặc giữ nguyên khi p tăng (e0 ≥ e100 ≥ e200 ≥ e300 ≥ e400 > 0)
+        // Nếu vi phạm, dừng tính và chỉ rõ lớp đất cùng hai cấp áp lực bị sai
+        for (let sIdx = 0; sIdx < epSteps.length - 1; sIdx++) {
+          let pCurrent = epSteps[sIdx];
+          let pNext = epSteps[sIdx + 1];
+          let eCurrent = e_dict[pCurrent];
+          let eNext = e_dict[pNext];
+
+          if (eNext > eCurrent) {
+            let pCurrentLabel = (pCurrent === 0) ? "p = 0 kPa (e₀)" : `p = ${pCurrent} kPa`;
+            let pNextLabel = (pNext === 0) ? "p = 0 kPa (e₀)" : `p = ${pNext} kPa`;
+
+            showInputValidationError(
+              `LỖI ĐƯỜNG NÉN e - p PHI VẬT LÝ (${lyrName})!`,
+              `Quy luật cơ học đất bị vi phạm tại ${lyrName}: Giữa hai cấp áp lực [${pCurrentLabel}] và [${pNextLabel}], hệ số rỗng lại tăng từ e(${pCurrent}) = ${eCurrent} lên e(${pNext}) = ${eNext}! Theo nguyên lý cơ học đất, khi áp lực nén tăng thì đất phải chặt lại (hệ số rỗng bắt buộc phải đơn điệu giảm: e(${pCurrent}) ≥ e(${pNext}) > 0). Không thể chấp nhận số liệu thí nghiệm phi vật lý này.`
+            );
+            return;
+          }
+        }
+
+        let z_top = z_acc;
+        z_acc += lyrRaw.h;
+        let z_bot = z_acc;
+
+        layers.push({
+          index: idx + 1,
+          name: lyrName,
+          h: lyrRaw.h,
+          z_top: z_top,
+          z_bot: z_bot,
+          gamma: lyrRaw.gamma,
+          gamma_sat: lyrRaw.sat,
+          gamma_prime: lyrRaw.sat - 10.0,
+          E: lyrRaw.E,
+          e_dict: e_dict
+        });
+      }
+
+      // Theo dõi mở rộng địa tầng giả định (nếu có)
+      let original_total_soil_depth = layers[layers.length - 1].z_bot;
+      let is_extended_soil = false;
+      let extended_reason = "";
+      let extended_amount = 0.0;
+
+      // Trường hợp móng đặt sâu hơn tổng chiều sâu địa tầng khảo sát
+      if (h > original_total_soil_depth) {
+        is_extended_soil = true;
+        let diff = (h - original_total_soil_depth) + 10.0;
+        let lastLyr = layers[layers.length - 1];
+        lastLyr.h += diff;
+        lastLyr.z_bot += diff;
+        extended_amount += diff;
+        extended_reason = `Đáy móng sâu Df = ${h.toFixed(2)}m vượt quá chiều sâu địa chất ban đầu (${original_total_soil_depth.toFixed(2)}m).`;
+      }
+
+      let F = b * l;
+      let N_day = N_tc + (gamma_tb * F * h); // Tổng hợp lực đứng tại đáy móng (N + G_m,đ)
+      let p_tb = N_day / F; // Áp lực trung bình đáy móng
+
+      // Xác định phương tác dụng của mô-men uốn và mô-men kháng uốn W tương ứng
+      let m_dir_val = document.getElementById('inp_M_dir')?.value || 'l';
+      let L_M, B_M, dir_name;
+      if (m_dir_val === 'auto') {
+        if (l >= b) {
+          L_M = l; B_M = b; dir_name = `cạnh dài l (${l.toFixed(2)}m)`;
+        } else {
+          L_M = b; B_M = l; dir_name = `cạnh dài b (${b.toFixed(2)}m)`;
+        }
+      } else if (m_dir_val === 'b') {
+        L_M = b; B_M = l; dir_name = `cạnh b (${b.toFixed(2)}m)`;
+      } else {
+        // Mặc định 'l'
+        L_M = l; B_M = b; dir_name = `cạnh l (${l.toFixed(2)}m)`;
+      }
+
+      let W = (B_M * L_M * L_M) / 6.0; // Mô-men kháng uốn theo phương uốn W = B·L²/6
+      let delta_p_M = (W > 0) ? (M_tc / W) : 0;
+      let e_0 = (N_day > 0) ? (M_tc / N_day) : 0; // Độ lệch tâm tại đáy móng tính từ toàn bộ hợp lực đứng N_đáy
+
+      let p_max = 0.0;
+      let p_min = 0.0;
+      let is_eccentric_fail = false;
+      let eccentric_fail_msg = "";
+
+      let core_limit = L_M / 6.0; // Giới hạn lõi móng (e0 <= L/6 để p_min >= 0)
+      let half_L = L_M / 2.0;
+
+      if (e_0 <= core_limit + 0.0001) {
+        // Lệch tâm bé: toàn bộ đáy móng tiếp xúc nén (p_min >= 0)
+        p_max = p_tb + delta_p_M;
+        p_min = Math.max(0.0, p_tb - delta_p_M);
+      } else if (e_0 < half_L) {
+        // Lệch tâm lớn: mép móng bị tách/nhổ khỏi nền đất (p_min đàn hồi < 0)
+        is_eccentric_fail = true;
+        p_min = 0.0;
+        let p_min_elastic = p_tb - delta_p_M;
+        p_max = (2.0 * N_day) / (3.0 * B_M * (half_L - e_0));
+        eccentric_fail_msg = `Độ lệch tâm e0 = ${e_0.toFixed(2)}m vượt quá phạm vi lõi móng (${core_limit.toFixed(2)}m theo phương ${dir_name}). Mép móng bị tách/nhổ khỏi nền đất (p_min = 0.00 kPa quy ước, p_min đàn hồi = ${p_min_elastic.toFixed(2)} kPa < 0).`;
+      } else {
+        // e0 >= half_L: Hợp lực rơi ra ngoài móng, mất ổn định chống lật hoàn toàn!
+        is_eccentric_fail = true;
+        p_min = 0.0;
+        p_max = Infinity;
+        eccentric_fail_msg = `Mô-men uốn quá lớn (M = ${M_tc} kN·m) làm điểm đặt hợp lực rơi ra ngoài đáy móng (e0 = ${e_0.toFixed(2)}m ≥ ${half_L.toFixed(2)}m theo phương ${dir_name}). Móng bị mất ổn định chống lật hoàn toàn!`;
+      }
+
+      let p = p_tb; // Theo TCVN 9362:2012 mục 4.6.11, tính lún theo áp lực trung bình đáy móng
+
+      // TÍNH ỨNG SUẤT BẢN THÂN TẠI ĐÁY MÓNG (Có xét mực nước ngầm GW nằm trên hay dưới đáy móng)
+      let sigma_bt_day = 0.0;
+      for (let i = 0; i < layers.length; i++) {
+        let L = layers[i];
+        if (h <= L.z_top) break;
+
+        let seg_top = L.z_top;
+        let seg_bot = Math.min(h, L.z_bot);
+        if (seg_bot <= seg_top) continue;
+
+        // Xét mực nước ngầm chia đoạn đất trên đáy móng thành 2 phần: trên GW (gamma) và dưới GW (gamma')
+        if (GW_depth >= seg_bot) {
+          // Toàn bộ đoạn nằm trên GW
+          sigma_bt_day += L.gamma * (seg_bot - seg_top);
+        } else if (GW_depth <= seg_top) {
+          // Toàn bộ đoạn nằm dưới GW (chịu đẩy nổi)
+          sigma_bt_day += L.gamma_prime * (seg_bot - seg_top);
+        } else {
+          // Bị cắt ngang bởi GW
+          let h_above_gw = GW_depth - seg_top;
+          let h_below_gw = seg_bot - GW_depth;
+          sigma_bt_day += L.gamma * h_above_gw + L.gamma_prime * h_below_gw;
+        }
+      }
+
+      let p_gl = p - sigma_bt_day;
+
+      // KIỂM TRA ƯU TIÊN: MẤT ỔN ĐỊNH LỆCH TÂM / LẬT MÓNG PHẢI ĐƯỢC BÁO TRƯỚC HẾT (TRẠNG THÁI GIỚI HẠN I)
+      if (is_eccentric_fail) {
+        document.getElementById('resultSection').style.display = 'block';
+        evalBanner.className = 'eval-box eval-fail';
+        evalBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation fa-xl"></i> <div>
+          <strong>CẢNH BÁO NGUY HIỂM: MÓNG MẤT ỔN ĐỊNH LỆCH TÂM / CÓ NGUY CƠ LẬT!</strong><br>
+          <span style="font-weight: 500; font-size: 0.95rem; opacity: 0.95;">
+            ${eccentric_fail_msg}<br>
+            Theo TCVN 9362:2012, móng không thỏa mãn điều kiện áp lực tiếp xúc đáy móng (yêu cầu p_min ≥ 0, e0 ≤ ${core_limit.toFixed(2)}m theo phương ${dir_name}). Mặc dù áp lực gây lún p_gl = ${p_gl.toFixed(2)} kPa (${p_gl < -0.001 ? 'dỡ tải/trồi móng' : (Math.abs(p_gl) <= 0.001 ? 'cân bằng áp lực bản thân' : 'nén')}), móng không thể tồn tại ổn định do nguy cơ lật đổ/tách mép nền đất!
+          </span>
+        </div>`;
+        const elF1 = document.getElementById('res_F');
+        if (elF1) elF1.innerText = F.toFixed(2);
+        document.getElementById('res_p').innerText = p.toFixed(2) + ' kPa';
+        let pDetailEl = document.getElementById('res_p_detail');
+        if (pDetailEl) {
+          pDetailEl.innerHTML = `p<sub>max</sub>: ${Number.isFinite(p_max) ? p_max.toFixed(1) : '∞'} | p<sub>min</sub>: ${p_min.toFixed(1)} kPa | e<sub>0</sub>: ${e_0.toFixed(2)}m (${m_dir_val === 'b' ? 'hướng b' : 'hướng l'})`;
+        }
+        document.getElementById('res_Df').innerText = h.toFixed(2);
+        document.getElementById('res_sig_bt_day').innerText = sigma_bt_day.toFixed(2) + ' kPa';
+        document.getElementById('res_pgl').innerText = p_gl.toFixed(2) + ' kPa';
+        document.getElementById('res_total_S').innerText = (p_gl < -0.001) ? '0.00 cm (Dỡ tải)' : '0.00 cm (Nguy cơ lật)';
+        document.getElementById('res_Hc').innerText = '0.00 m';
+        const badgeS = document.getElementById('tab_s_badge');
+        if (badgeS) {
+          badgeS.innerText = 'Nguy cơ lật';
+          badgeS.style.color = '#f87171';
+        }
+        document.getElementById('pointsTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #fca5a5; padding: 16px;">CẢNH BÁO LẬT MÓNG: ${eccentric_fail_msg}</td></tr>`;
+        document.getElementById('settlementTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #fca5a5; padding: 16px;">Móng mất ổn định lật/tách mép nền đất, không áp dụng phương pháp tính lún e - p.</td></tr>`;
+        globalCalculationData = { b, l, h, N: N_tc, M: M_tc, M_dir: m_dir_val, gw: GW_depth, hc: 0, layers };
+        renderSoilTableHeaders();
+        renderLegend3D(layers, h, GW_depth, 0, is_extended_soil, original_total_soil_depth);
+        update3DScene();
+        showCalcToast("Cảnh báo: Móng mất ổn định lệch tâm / lật!");
+        return;
+      }
+
+      // KIỂM TRA ÁP LỰC GÂY LÚN p_gl (khi móng đã thỏa mãn ổn định lật):
+      // Theo TCVN 9362:2012, phương pháp cộng lún từng lớp e-p chỉ áp dụng khi áp lực đáy móng vượt áp lực bản thân (p_gl > 0).
+      // Khi p_gl < 0: Đất ở trạng thái dỡ tải / giãn nở / trồi móng, không được coi độ lún âm là "Đạt tiêu chuẩn".
+      // Khi p_gl = 0: Tải trọng công trình đúng bằng trọng lượng đất đào đi, áp lực tăng thêm bằng 0, độ lún nén lún bằng 0.
+      if (p_gl < -0.001) {
+        document.getElementById('resultSection').style.display = 'block';
+        evalBanner.className = 'eval-box eval-fail';
+        evalBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation fa-xl"></i> <div>
+          <strong>CẢNH BÁO: ÁP LỰC GÂY LÚN ÂM (p_gl = ${p_gl.toFixed(2)} kPa < 0)!</strong><br>
+          <span style="font-weight: 500; font-size: 0.95rem; opacity: 0.95;">
+            Áp lực đáy móng (p = ${p.toFixed(2)} kPa) nhỏ hơn áp lực bản thân của đất tại đáy móng (σ_bt = ${sigma_bt_day.toFixed(2)} kPa).<br>
+            Trường hợp này đất ở trạng thái <strong>dỡ tải / trồi móng (nở hông/giãn nở đáy hố đào)</strong>, nằm ngoài phạm vi mô hình tính lún đàn hồi - cố kết e - p của TCVN 9362:2012. Không được coi độ lún tính toán âm là thỏa mãn tiêu chuẩn ổn định lún.
+          </span>
+        </div>`;
+        const elF1 = document.getElementById('res_F');
+        if (elF1) elF1.innerText = F.toFixed(2);
+        document.getElementById('res_p').innerText = p.toFixed(2) + ' kPa';
+        let pDetailEl = document.getElementById('res_p_detail');
+        if (pDetailEl) {
+          if (M_tc > 0.001) {
+            pDetailEl.innerHTML = `p<sub>max</sub>: ${Number.isFinite(p_max) ? p_max.toFixed(1) : '∞'} | p<sub>min</sub>: ${p_min.toFixed(1)} kPa | e<sub>0</sub>: ${e_0.toFixed(2)}m (${m_dir_val === 'b' ? 'hướng b' : 'hướng l'})`;
+          } else {
+            pDetailEl.innerHTML = `(Tải đúng tâm: e<sub>0</sub> = 0m)`;
+          }
+        }
+        document.getElementById('res_Df').innerText = h.toFixed(2);
+        document.getElementById('res_sig_bt_day').innerText = sigma_bt_day.toFixed(2) + ' kPa';
+        document.getElementById('res_pgl').innerText = p_gl.toFixed(2) + ' kPa';
+        document.getElementById('res_total_S').innerText = '0.00 cm (Dỡ tải)';
+        document.getElementById('res_Hc').innerText = '0.00 m (Không có vùng lún)';
+        const badgeS = document.getElementById('tab_s_badge');
+        if (badgeS) {
+          badgeS.innerText = 'Trồi/Dỡ tải';
+          badgeS.style.color = '#f87171';
+        }
+        document.getElementById('pointsTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #fca5a5; padding: 16px;">Áp lực gây lún âm p_gl = ${p_gl.toFixed(2)} kPa. Trạng thái dỡ tải hố móng, không phát sinh ứng suất gây lún nén ép.</td></tr>`;
+        document.getElementById('settlementTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #fca5a5; padding: 16px;">Không áp dụng phương pháp cộng lún từng lớp e - p cho trường hợp áp lực gây lún âm (dỡ tải/trồi đất).</td></tr>`;
+        globalCalculationData = { b, l, h, N: N_tc, M: M_tc, M_dir: m_dir_val, gw: GW_depth, hc: 0, layers };
+        renderSoilTableHeaders();
+        renderLegend3D(layers, h, GW_depth, 0, is_extended_soil, original_total_soil_depth);
+        update3DScene();
+        showCalcToast("Đã tính toán xong (Trạng thái dỡ tải/trồi móng)!");
+        return;
+      }
+
+      if (Math.abs(p_gl) <= 0.001) {
+        document.getElementById('resultSection').style.display = 'block';
+        evalBanner.className = 'eval-box eval-pass';
+        evalBanner.innerHTML = `<i class="fa-solid fa-circle-info fa-xl"></i> <div>
+          <strong>THÔNG BÁO: ÁP LỰC GÂY LÚN BẰNG 0 (p_gl = 0.00 kPa)!</strong><br>
+          <span style="font-weight: 500; font-size: 0.95rem; opacity: 0.95;">
+            Áp lực móng đúng bằng trọng lượng đất đào đi (p = σ_bt = ${sigma_bt_day.toFixed(2)} kPa). Không phát sinh ứng suất tăng thêm trong nền, độ lún công trình do tải trọng mới bằng 0 (S = 0.00 cm).
+          </span>
+        </div>`;
+        const elF1 = document.getElementById('res_F');
+        if (elF1) elF1.innerText = F.toFixed(2);
+        document.getElementById('res_p').innerText = p.toFixed(2) + ' kPa';
+        let pDetailEl = document.getElementById('res_p_detail');
+        if (pDetailEl) {
+          if (M_tc > 0.001) {
+            pDetailEl.innerHTML = `p<sub>max</sub>: ${Number.isFinite(p_max) ? p_max.toFixed(1) : '∞'} | p<sub>min</sub>: ${p_min.toFixed(1)} kPa | e<sub>0</sub>: ${e_0.toFixed(2)}m (${m_dir_val === 'b' ? 'hướng b' : 'hướng l'})`;
+          } else {
+            pDetailEl.innerHTML = `(Tải đúng tâm: e<sub>0</sub> = 0m)`;
+          }
+        }
+        document.getElementById('res_Df').innerText = h.toFixed(2);
+        document.getElementById('res_sig_bt_day').innerText = sigma_bt_day.toFixed(2) + ' kPa';
+        document.getElementById('res_pgl').innerText = '0.00 kPa';
+        document.getElementById('res_total_S').innerText = '0.00 cm';
+        document.getElementById('res_Hc').innerText = '0.00 m';
+        const badgeS = document.getElementById('tab_s_badge');
+        if (badgeS) {
+          badgeS.innerText = '0.00 cm';
+          badgeS.style.color = '#34d399';
+        }
+        document.getElementById('pointsTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #93c5fd; padding: 16px;">p_gl = 0 kPa. Không có ứng suất gây lún.</td></tr>`;
+        document.getElementById('settlementTableBody').innerHTML = `<tr><td colspan="8" style="text-align: center; color: #34d399; padding: 16px;">TỔNG ĐỘ LÚN TOÀN MÓNG: S = 0.00 cm (Cân bằng dỡ tải hoàn toàn).</td></tr>`;
+        globalCalculationData = { b, l, h, N: N_tc, M: M_tc, M_dir: m_dir_val, gw: GW_depth, hc: 0, layers };
+        renderSoilTableHeaders();
+        renderLegend3D(layers, h, GW_depth, 0, is_extended_soil, original_total_soil_depth);
+        update3DScene();
+        showCalcToast("Đã tính toán xong (p_gl = 0, S = 0 cm)!");
+        return;
+      }
+
+      let lb_ratio = l_calc / b_calc; // Tỷ số l/b luôn >= 1.0 chuẩn bảng Boussinesq
+      let h_max = 0.4 * b_calc; // Bước chia theo cạnh ngắn
+
+      // Xác định ranh giới lớp đất và mực nước ngầm
+      let boundary_depths = [0.0];
+      for (let i = 0; i < layers.length; i++) {
+        let z_rel = layers[i].z_bot - h;
+        if (z_rel > 0.01) {
+          boundary_depths.push(Number(z_rel.toFixed(3)));
+        }
+      }
+
+      let z_gw_rel = GW_depth - h;
+      if (z_gw_rel > 0.01) {
+        boundary_depths.push(Number(z_gw_rel.toFixed(3)));
+        boundary_depths.push(Number((z_gw_rel + 2 * h_max).toFixed(3)));
+      }
+
+      let max_b_depth = Math.max(...boundary_depths);
+      let min_depth_needed = Math.max(10.0, 5.0 * b_calc);
+      if (max_b_depth < min_depth_needed) {
+        boundary_depths.push(Number(min_depth_needed.toFixed(3)));
+        let lastLyr = layers[layers.length - 1];
+        let req_bot = h + min_depth_needed;
+        if (lastLyr.z_bot < req_bot) {
+          let extra = req_bot - lastLyr.z_bot;
+          lastLyr.h += extra;
+          lastLyr.z_bot = req_bot;
+          is_extended_soil = true;
+          extended_amount += extra;
+          if (!extended_reason) {
+            extended_reason = `Chiều sâu khảo sát (${original_total_soil_depth.toFixed(2)}m) chưa đủ sâu tới phạm vi tính lún tối thiểu (${req_bot.toFixed(2)}m).`;
+          }
+        }
+      }
+
+      boundary_depths = boundary_depths.filter((item, pos) => boundary_depths.indexOf(item) === pos).sort((a, b) => a - b);
+
+      let z_pts = [0.0];
+      let h_slices = [];
+      let slice_layer_idx = [];
+
+      for (let bIdx = 0; bIdx < boundary_depths.length - 1; bIdx++) {
+        let z_start = boundary_depths[bIdx];
+        let z_end = boundary_depths[bIdx + 1];
+        let seg_H = z_end - z_start;
+
+        let mid_depth_abs = h + (z_start + z_end) / 2.0;
+        let cur_layer_idx = layers.length - 1;
+        for (let L_i = 0; L_i < layers.length; L_i++) {
+          if (mid_depth_abs >= layers[L_i].z_top && mid_depth_abs <= layers[L_i].z_bot) {
+            cur_layer_idx = L_i;
+            break;
+          }
+        }
+
+        if (seg_H <= h_max + 0.001) {
+          z_pts.push(Number(z_end.toFixed(3)));
+          h_slices.push(Number(seg_H.toFixed(3)));
+          slice_layer_idx.push(cur_layer_idx);
+        } else {
+          let cur = z_start;
+          while (z_end - cur > h_max + 0.001) {
+            cur += h_max;
+            z_pts.push(Number(cur.toFixed(3)));
+            h_slices.push(Number(h_max.toFixed(3)));
+            slice_layer_idx.push(cur_layer_idx);
+          }
+          if (z_end - cur > 0.001) {
+            let rem = Number((z_end - cur).toFixed(3));
+            z_pts.push(Number(z_end.toFixed(3)));
+            h_slices.push(rem);
+            slice_layer_idx.push(cur_layer_idx);
+          }
+        }
+      }
+
+      // Tính ứng suất tại từng điểm phân tố
+      let pts_table = [];
+      let s_bt_acc = sigma_bt_day;
+      let stopping_point = -1;
+
+      for (let i = 0; i < z_pts.length; i++) {
+        let zi = z_pts[i];
+        let zb = zi / b_calc;
+        let k0 = traBangBoussinesq(zb, lb_ratio);
+        let s_gl = k0 * p_gl;
+
+        if (i > 0) {
+          let hi = h_slices[i - 1];
+          let lyr = layers[slice_layer_idx[i - 1]];
+          let z_top_abs = h + z_pts[i - 1];
+          let z_bot_abs = h + zi;
+
+          if (GW_depth >= z_bot_abs - 0.0001) {
+            // Toàn bộ phân tố nằm trên mực nước ngầm
+            s_bt_acc += lyr.gamma * hi;
+          } else if (GW_depth <= z_top_abs + 0.0001) {
+            // Toàn bộ phân tố nằm dưới mực nước ngầm (chịu đẩy nổi)
+            s_bt_acc += lyr.gamma_prime * hi;
+          } else {
+            // Mực nước ngầm cắt ngang qua phân tố: tính chính xác từng phần
+            let h_above = GW_depth - z_top_abs;
+            let h_below = z_bot_abs - GW_depth;
+            s_bt_acc += lyr.gamma * h_above + lyr.gamma_prime * h_below;
+          }
+        }
+
+        // Xác định chính xác lớp đất tại cao độ tuyệt đối (h + zi)
+        let pt_abs_depth = h + zi;
+        let cur_layer = layers[layers.length - 1];
+        for (let lyrIdx = 0; lyrIdx < layers.length; lyrIdx++) {
+          const isLast = (lyrIdx === layers.length - 1);
+          let matchLyr = isLast ? (pt_abs_depth >= layers[lyrIdx].z_top - 0.0001) : (pt_abs_depth >= layers[lyrIdx].z_top - 0.0001 && pt_abs_depth < layers[lyrIdx].z_bot - 0.0001);
+          if (matchLyr) {
+            cur_layer = layers[lyrIdx];
+            break;
+          }
+        }
+        let cur_E = cur_layer.E;
+        let ratio_stop = (cur_E < 5000) ? 10.0 : 5.0;
+        let is_stopped = (s_bt_acc >= s_gl * ratio_stop);
+
+        if (is_stopped && stopping_point === -1) {
+          stopping_point = i;
+        }
+
+        pts_table.push({
+          idx: i,
+          z: zi,
+          zb: zb,
+          k0: k0,
+          s_bt: s_bt_acc,
+          s_gl: s_gl,
+          ratio_stop: ratio_stop,
+          is_stopped: is_stopped
+        });
+      }
+
+      let reached_real_stop = (stopping_point !== -1);
+      if (!reached_real_stop) {
+        stopping_point = pts_table.length - 1;
+      }
+
+      let settlement_slices = [];
+      let total_S = 0.0;
+      let has_invalid_ep = false;
+
+      for (let j = 0; j < stopping_point; j++) {
+        let pA = pts_table[j];
+        let pB = pts_table[j + 1];
+        let hi = h_slices[j];
+        let lyr = layers[slice_layer_idx[j]] || layers[layers.length - 1];
+
+        let p1i = (pA.s_bt + pB.s_bt) / 2.0;
+        let sgl_tb = (pA.s_gl + pB.s_gl) / 2.0;
+        let p2i = p1i + sgl_tb;
+
+        let e1i = noiSuyHeSoRong(p1i, lyr.e_dict);
+        let e2i = noiSuyHeSoRong(p2i, lyr.e_dict);
+
+        // Chặn phân tố có e2 > e1 (hệ số rỗng tăng khi chịu tải thêm là phi vật lý)
+        if (e2i > e1i + 0.0001) {
+          has_invalid_ep = true;
+        }
+
+        let Si_cm = ((e1i - e2i) / (1.0 + e1i)) * (hi * 100.0);
+        total_S += Si_cm;
+
+        let maxP = (epSteps && epSteps.length > 0) ? epSteps[epSteps.length - 1] : 400.0;
+        let isSub100 = (p1i < 100.0 || p2i < 100.0);
+        let isExtrap = (p1i > maxP || p2i > maxP);
+
+        settlement_slices.push({
+          pt: j + 1,
+          hi: hi,
+          lyrName: lyr.name,
+          p1i: p1i,
+          sgl_tb: sgl_tb,
+          p2i: p2i,
+          e1i: e1i,
+          e2i: e2i,
+          Si: Si_cm,
+          isSub100: isSub100,
+          isExtrap: isExtrap,
+          maxP: maxP,
+          isClamped: (e2i <= 0.2001)
+        });
+      }
+
+      let Hc_val = pts_table[stopping_point].z;
+      const elFootingDim = document.getElementById('hud_footing_dim');
+      if (elFootingDim) {
+        elFootingDim.innerHTML = `<i class="fa-solid fa-cube"></i> <span>MÓNG: b=${b.toFixed(1)}m × l=${l.toFixed(1)}m × Df=${h.toFixed(1)}m</span>`;
+      }
+      const elHcDepth = document.getElementById('hud_hc_depth');
+      if (elHcDepth) {
+        elHcDepth.innerHTML = reached_real_stop 
+          ? `<i class="fa-solid fa-chart-line"></i> <span>VÙNG ẢNH HƯỞNG LÚN Hc = ${Hc_val.toFixed(2)} m (ĐÃ TẮT LÚN)</span>`
+          : `<i class="fa-solid fa-chart-line"></i> <span>VÙNG TÍNH LÚN H = ${Hc_val.toFixed(2)} m (CHƯA ĐẠT NGƯỠNG TẮT LÚN)</span>`;
+      }
+
+      document.getElementById('resultSection').style.display = 'block';
+      const elF = document.getElementById('res_F');
+      if (elF) elF.innerText = F.toFixed(2);
+      document.getElementById('res_p').innerText = p_tb.toFixed(2) + ' kPa';
+      let pDetailEl = document.getElementById('res_p_detail');
+      if (pDetailEl) {
+        if (M_tc > 0.001) {
+          pDetailEl.innerHTML = `p<sub>max</sub>: ${Number.isFinite(p_max) ? p_max.toFixed(1) : '∞'} | p<sub>min</sub>: ${p_min.toFixed(1)} kPa | e<sub>0</sub>: ${e_0.toFixed(2)}m (${m_dir_val === 'b' ? 'hướng b' : 'hướng l'})`;
+        } else {
+          pDetailEl.innerHTML = `(Tải đúng tâm: e<sub>0</sub> = 0m)`;
+        }
+      }
+      document.getElementById('res_Df').innerText = h.toFixed(2);
+      document.getElementById('res_sig_bt_day').innerText = sigma_bt_day.toFixed(2) + ' kPa';
+      document.getElementById('res_pgl').innerText = p_gl.toFixed(2) + ' kPa';
+      document.getElementById('res_total_S').innerText = total_S.toFixed(2) + ' cm';
+      const badgeS = document.getElementById('tab_s_badge');
+      if (badgeS) {
+        badgeS.innerText = total_S.toFixed(2) + ' cm';
+        badgeS.style.color = (reached_real_stop && total_S <= S_limit && !is_eccentric_fail && !has_invalid_ep && total_S >= 0) ? '#34d399' : '#f87171';
+      }
+      document.getElementById('res_Hc').innerText = Hc_val.toFixed(2) + (reached_real_stop ? ' m' : ' m (chưa tắt lún)');
+
+      let is_safe = total_S <= S_limit && reached_real_stop && !is_eccentric_fail && !has_invalid_ep && total_S >= 0;
+      let warnText = '';
+      if (is_extended_soil) {
+        warnText += `<br><span style="font-size:0.85rem; color:#f59e0b;"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Cảnh báo mở rộng địa tầng:</strong> ${extended_reason} Ứng dụng đã tạm thời giả định lớp đất cuối cùng (${layers[layers.length - 1].name}) mở rộng thêm ${extended_amount.toFixed(2)}m (đến độ sâu ${layers[layers.length - 1].z_bot.toFixed(2)}m) để xác định điểm tắt lún Hc. Cần bổ sung số liệu khoan khảo sát sâu hơn!</span>`;
+      }
+
+      if (is_eccentric_fail) {
+        evalBanner.className = 'eval-box eval-fail';
+        evalBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation fa-xl"></i> <div><strong>CẢNH BÁO: MÓNG MẤT ỔN ĐỊNH LỆCH TÂM / CÓ NGUY CƠ LẬT!</strong><br><span style="font-weight: 500; font-size: 0.95rem; opacity: 0.95;">${eccentric_fail_msg}<br>Theo TCVN 9362:2012, móng không thỏa mãn điều kiện áp lực tiếp xúc đáy móng (yêu cầu p_min ≥ 0, e0 ≤ ${core_limit.toFixed(2)}m theo phương ${dir_name}). Độ lún tính toán S = ${total_S.toFixed(2)} cm chỉ phản ánh theo áp lực trung bình p_tb = ${p_tb.toFixed(2)} kPa, không được coi là đạt tiêu chuẩn ổn định.</span>${warnText}</div>`;
+      } else if (has_invalid_ep || total_S < 0) {
+        evalBanner.className = 'eval-box eval-fail';
+        evalBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation fa-xl"></i> <div><strong>LỖI TÍNH TOÁN: ĐƯỜNG NÉN e - p PHI VẬT LÝ!</strong><br><span style="font-weight: 500; font-size: 0.95rem; opacity: 0.95;">Độ lún tính toán ra giá trị âm (S = ${total_S.toFixed(2)} cm) do hệ số rỗng e2 > e1 khi chịu tải thêm. Đường nén đất nền phải có e giảm khi p tăng. Tuyệt đối không coi độ lún âm là đạt tiêu chuẩn.</span>${warnText}</div>`;
+      } else if (is_safe) {
+        evalBanner.className = 'eval-box eval-pass';
+        let eccentricNote = (M_tc > 0.001) ? ` (Móng ổn định chịu lệch tâm: e0 = ${e_0.toFixed(2)}m ≤ ${core_limit.toFixed(2)}m theo phương ${dir_name}, p_min = ${p_min.toFixed(2)} kPa ≥ 0)` : '';
+        let stopDesc = (stopping_point === 0) 
+          ? `Điều kiện tắt lún thỏa mãn ngay tại đáy móng (σ_bt ≥ ${pts_table[0].ratio_stop}·σ_gl ➔ Hc = 0.00 m, S = 0.00 cm ≤ [S] = ${S_limit.toFixed(1)} cm). Không phát sinh vùng nén lún.`
+          : `Độ lún tính toán S = ${total_S.toFixed(2)} cm ≤ Độ lún giới hạn [S] = ${S_limit.toFixed(1)} cm (theo TCVN 9362:2012).`;
+        evalBanner.innerHTML = `<i class="fa-solid fa-circle-check fa-xl"></i> <div><strong>KẾT LUẬN: ĐẠT TIÊU CHUẨN ỔN ĐỊNH LÚN!</strong><br><span style="font-weight: 500; font-size: 0.95rem; opacity: 0.9;">${stopDesc}${eccentricNote}</span>${warnText}</div>`;
+      } else {
+        evalBanner.className = 'eval-box eval-fail';
+        let failReason = (!reached_real_stop)
+          ? `Tải trọng quá lớn hoặc địa tầng khảo sát nông, chưa thỏa mãn điều kiện tắt lún (σ_bt < ngưỡng tắt lún). Độ lún sơ bộ S = ${total_S.toFixed(2)} cm.`
+          : `Độ lún tính toán S = ${total_S.toFixed(2)} cm > [S] = ${S_limit.toFixed(1)} cm.`;
+        evalBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation fa-xl"></i> <div><strong>CẢNH BÁO: ĐỘ LÚN KHÔNG THỎA MÃN TIÊU CHUẨN!</strong><br><span style="font-weight: 500; font-size: 0.95rem; opacity: 0.9;">${failReason} Kiến nghị: Tăng kích thước đáy móng (b, l) hoặc hạ sâu đáy móng sang tầng đất tốt hơn.</span>${warnText}</div>`;
+      }
+
+      let pBody = document.getElementById('pointsTableBody');
+      pBody.innerHTML = '';
+      pts_table.forEach((pt, m) => {
+        let note = '';
+        if (m === 0) {
+          if (stopping_point === 0) {
+            note = `🎯 TẮT LÚN NGAY ĐÁY MÓNG (σ_bt ≥ ${pt.ratio_stop}·σ_gl) ➔ Hc = 0.00m`;
+          } else {
+            note = 'Đáy móng';
+          }
+        } else if (reached_real_stop && m === stopping_point) {
+          note = `🎯 TẮT LÚN (σ_bt ≥ ${pt.ratio_stop}·σ_gl) ➔ Dừng tính lún Hc`;
+        } else if (!reached_real_stop && m === stopping_point) {
+          note = `⚠️ HẾT CHIỀU SÂU ĐỊA TẦNG (Chưa đạt σ_bt ≥ ${pt.ratio_stop}·σ_gl)`;
+        } else if (Math.abs(pt.z - z_gw_rel) < 0.05) {
+          note = `Mực nước ngầm GW (z = ${pt.z.toFixed(2)}m)`;
+        } else if (pt.z > z_gw_rel || h >= GW_depth) {
+          note = 'Dưới MNN (dùng γ\' đẩy nổi)';
+        }
+        if (is_extended_soil && (h + pt.z) > original_total_soil_depth + 0.001) {
+          note += (note ? ' · ' : '') + '<span style="color:#f59e0b; font-size:0.75rem;"><i class="fa-solid fa-triangle-exclamation"></i> (Giả định mở rộng)</span>';
+        }
+
+        let tr = document.createElement('tr');
+        if (m === stopping_point) tr.className = 'row-stopped';
+        tr.innerHTML = `
+          <td><strong>${pt.idx}</strong></td>
+          <td>${pt.z.toFixed(2)}</td>
+          <td>${pt.zb.toFixed(3)}</td>
+          <td>${pt.k0.toFixed(4)}</td>
+          <td>${pt.s_bt.toFixed(2)}</td>
+          <td>${pt.s_gl.toFixed(2)}</td>
+          <td>${(pt.s_gl * pt.ratio_stop).toFixed(2)}</td>
+          <td style="text-align: left;">${note}</td>
+        `;
+        pBody.appendChild(tr);
+      });
+
+      let sBody = document.getElementById('settlementTableBody');
+      sBody.innerHTML = '';
+      let has_sub_100 = false;
+      let count_sub_100 = 0;
+      let has_extrap_400 = false;
+      let count_extrap_400 = 0;
+      let has_clamp_02 = false;
+
+      if (settlement_slices.length === 0) {
+        let trEmpty = document.createElement('tr');
+        trEmpty.innerHTML = `
+          <td colspan="8" style="text-align: center; color: #34d399; padding: 18px; font-weight: 600; background: rgba(16, 185, 129, 0.08);">
+            <i class="fa-solid fa-circle-check"></i> ĐIỀU KIỆN TẮT LÚN THỎA MÃN NGAY TẠI ĐÁY MÓNG (z = 0.00 m, σ_bt ≥ ${pts_table[0].ratio_stop}·σ_gl): Không phát sinh vùng nén lún, Hc = 0.00 m, S = 0.00 cm.
+          </td>
+        `;
+        sBody.appendChild(trEmpty);
+      } else {
+        settlement_slices.forEach(sl => {
+          let tr = document.createElement('tr');
+          let noteBadges = '';
+          if (sl.isSub100) {
+            has_sub_100 = true;
+            count_sub_100++;
+            noteBadges += `<br><span style="color:#38bdf8; font-size:0.72rem; font-weight:600;"><i class="fa-solid fa-circle-info"></i> Dưới 100kPa (từ e₀)</span>`;
+          }
+          if (sl.isExtrap) {
+            has_extrap_400 = true;
+            count_extrap_400++;
+            noteBadges += `<br><span style="color:#f59e0b; font-size:0.72rem; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> Ngoại suy (>${sl.maxP}kPa)</span>`;
+          }
+          if (sl.isClamped) {
+            has_clamp_02 = true;
+            noteBadges += `<br><span style="color:#ef4444; font-size:0.72rem; font-weight:600;">(chạm cận dưới e=0.20)</span>`;
+          }
+          tr.innerHTML = `
+            <td><strong>PT ${sl.pt}</strong></td>
+            <td>${sl.hi.toFixed(2)}</td>
+            <td><span style="background: #1e293b; padding: 2px 8px; border-radius: 4px; font-weight: 600; color: #93c5fd;">${sl.lyrName}</span></td>
+            <td>${sl.p1i.toFixed(2)}</td>
+            <td>${sl.p2i.toFixed(2)}${noteBadges}</td>
+            <td>${sl.e1i.toFixed(4)}</td>
+            <td>${sl.e2i.toFixed(4)}</td>
+            <td style="color: ${sl.Si >= 0 ? '#34d399' : '#f87171'}; font-weight: 700;">${sl.Si.toFixed(3)}</td>
+          `;
+          sBody.appendChild(tr);
+        });
+      }
+
+      let trTotal = document.createElement('tr');
+      trTotal.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+      trTotal.style.fontWeight = '700';
+      trTotal.innerHTML = `
+        <td colspan="7" style="text-align: right; padding-right: 20px; font-size: 0.95rem; color: #6ee7b7;">TỔNG ĐỘ LÚN TOÀN MÓNG (S = Σ Si):</td>
+        <td style="color: #34d399; font-size: 1.15rem;">${total_S.toFixed(2)} cm</td>
+      `;
+      sBody.appendChild(trTotal);
+
+      // Nếu có phân tố chịu áp lực dưới 100 kPa, chèn ghi chú kỹ thuật giải thích rõ
+      if (has_sub_100) {
+        let trNoteSub = document.createElement('tr');
+        trNoteSub.innerHTML = `
+          <td colspan="8" style="text-align: left; background: rgba(56, 189, 248, 0.10); color: #7dd3fc; padding: 10px 16px; font-size: 0.85rem; border-left: 4px solid #38bdf8;">
+            <i class="fa-solid fa-circle-info"></i> <strong>LƯU Ý CẤP ÁP LỰC DƯỚI 100 kPa:</strong> Có ${count_sub_100} phân tố chịu áp lực p < 100 kPa (trước cấp áp lực nén 100 kPa của thí nghiệm). Giá trị hệ số rỗng e được xác định từ hệ số rỗng ban đầu tự nhiên e₀ đến e100.
+          </td>
+        `;
+        sBody.appendChild(trNoteSub);
+      }
+
+      // Nếu có phân tố ngoại suy e-p > maxP kPa, chèn thêm hàng ghi chú kỹ thuật ngay dưới bảng
+      if (has_extrap_400) {
+        let maxPDisplay = (epSteps && epSteps.length > 0) ? epSteps[epSteps.length - 1] : 400;
+        let trNote = document.createElement('tr');
+        trNote.innerHTML = `
+          <td colspan="8" style="text-align: left; background: rgba(245, 158, 11, 0.12); color: #fbbf24; padding: 12px 16px; font-size: 0.85rem; border-left: 4px solid #f59e0b;">
+            <i class="fa-solid fa-triangle-exclamation"></i> <strong>LƯU Ý NGOẠI SUY ĐƯỜNG CONG NÉN e - p:</strong> Có ${count_extrap_400} phân tố chịu áp lực vượt quá ${maxPDisplay} kPa (vượt quá cấp áp lực lớn nhất ${maxPDisplay} kPa trong đường cong nén e - p). Hệ số rỗng e được ngoại suy tuyến tính theo độ dốc nạp tải cuối.${has_clamp_02 ? ' Một số phân tố chạm ngưỡng chặn vật lý e = 0.20.' : ''} Khuyến nghị bổ sung thí nghiệm nén ở cấp áp lực cao tương ứng nếu cần số liệu chính xác tuyệt đối.
+          </td>
+        `;
+        sBody.appendChild(trNote);
+      }
+
+      // Lưu trạng thái 3D
+      globalCalculationData = {
+        b: b,
+        l: l,
+        h: h,
+        N: N_tc,
+        M: M_tc,
+        M_dir: m_dir_val,
+        gw: GW_depth,
+        hc: Hc_val,
+        layers: layers
+      };
+
+      renderStressChart(pts_table, stopping_point);
+      // Cập nhật lại tiêu đề bảng địa tầng để nhãn (Đặt móng) đồng bộ ngay lập tức
+      renderSoilTableHeaders();
+      // Hiển thị chú giải địa tầng 3D đúng theo địa tầng thực tế khảo sát
+      renderLegend3D(layers, h, GW_depth, Hc_val, is_extended_soil, original_total_soil_depth);
+      update3DScene();
+
+      // Thông báo sau khi tính toán xong
+      showCalcToast("Đã tính toán xong!");
+    }
+
+    function renderStressChart(pts, stopIdx) {
+      const ctx = document.getElementById('stressChart').getContext('2d');
+      if (myChart) {
+        myChart.destroy();
+      }
+
+      const depths = pts.map(p => p.z);
+      const data_sgl = pts.map(p => p.s_gl);
+      const data_sbt = pts.map(p => p.s_bt);
+      const data_sbt5 = pts.map(p => p.s_gl * p.ratio_stop);
+
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: depths,
+          datasets: [
+            {
+              label: 'Ứng suất gây lún σ_gl (kPa)',
+              data: data_sgl,
+              borderColor: '#f87171',
+              backgroundColor: 'rgba(248, 113, 113, 0.12)',
+              borderWidth: 2.5,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: 'Ứng suất bản thân σ_bt (kPa)',
+              data: data_sbt,
+              borderColor: '#60a5fa',
+              backgroundColor: 'rgba(96, 165, 250, 0.12)',
+              borderWidth: 2.5,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: 'Ngưỡng σ_bt tắt lún (5·σ_gl / 10·σ_gl)',
+              data: data_sbt5,
+              borderColor: '#fbbf24',
+              borderDash: [6, 6],
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: `Biểu đồ biến thiên ứng suất dưới đáy móng (Tắt lún Hc = ${pts[stopIdx].z.toFixed(2)}m)`,
+              font: { size: 14, weight: '700', family: 'Plus Jakarta Sans' },
+              color: '#e2e8f0',
+              padding: { bottom: 15 }
+            },
+            legend: {
+              labels: { color: '#cbd5e1' }
+            },
+            tooltip: {
+              backgroundColor: '#030712',
+              titleColor: '#60a5fa',
+              bodyColor: '#f3f4f6',
+              borderColor: '#374151',
+              borderWidth: 1,
+              titleFont: { weight: 'bold' },
+              padding: 12,
+              boxPadding: 6,
+              callbacks: {
+                title: function(items) {
+                  return `Chiều sâu z = ${items[0].label} m`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Chiều sâu z dưới đáy móng (m)',
+                font: { weight: '600' },
+                color: '#94a3b8'
+              },
+              ticks: { color: '#94a3b8' },
+              grid: { color: 'rgba(55, 65, 81, 0.4)' }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Ứng suất (kPa)',
+                font: { weight: '600' },
+                color: '#94a3b8'
+              },
+              ticks: { color: '#94a3b8' },
+              beginAtZero: true,
+              grid: { color: 'rgba(55, 65, 81, 0.4)' }
+            }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // THREE.JS ENGINE MÔ PHỎNG 3D MÓNG ĐƠN & ĐỊA TẦNG NỀN ĐEN
+    // ==========================================
+    let scene, camera, renderer, controls;
+    let modelGroup = null;
+    let waterMesh = null;
+    let raycaster, mouse;
+    let clickableObjects = [];
+
+    // Chế độ tương tác: 'hover' (chạm là hiện), 'click' (bấm mới hiện), 'none' (tắt)
+    let currentTooltipMode = 'hover';
+    let isPinnedByClick = false;
+
+    const SOIL_PALETTE = [0xd97706, 0xb45309, 0x78350f, 0x4d7c0f, 0x0f766e, 0x1e3a8a, 0x581c87];
+
+    function setTooltipMode(mode) {
+      currentTooltipMode = mode;
+      isPinnedByClick = false;
+
+      document.getElementById('btnModeHover').classList.toggle('active', mode === 'hover');
+      document.getElementById('btnModeClick').classList.toggle('active', mode === 'click');
+      document.getElementById('btnModeNone').classList.toggle('active', mode === 'none');
+
+      const tooltip = document.getElementById('infoTooltip3D');
+      tooltip.style.display = 'none';
+
+      const hintText = document.getElementById('hintModeText');
+      if (mode === 'hover') {
+        hintText.innerText = 'Rê chuột (Hover): Hiện thông số khi chạm | Click: Giữ cố định';
+      } else if (mode === 'click') {
+        hintText.innerText = 'Bấm chuột (Click): Hiện thông số chi tiết móng / lớp đất';
+      } else {
+        hintText.innerText = 'Đã tắt bảng thông số nổi 3D';
+      }
+    }
+
+    function init3D() {
+      const container = document.getElementById('canvas3dContainer');
+      const canvas = document.getElementById('threeCanvas');
+      if (!container || !canvas) return;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x050811);
+      scene.fog = new THREE.FogExp2(0x050811, 0.02);
+
+      const initW = container.clientWidth || 800;
+      const initH = container.clientHeight || 540;
+
+      camera = new THREE.PerspectiveCamera(45, initW / initH, 0.1, 1000);
+      camera.position.set(14, 11, 16);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+      renderer.setSize(initW, initH, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 + 0.15;
+      controls.target.set(0, -2.5, 0);
+
+      // Chiếu sáng Studio 3D
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+      dirLight.position.set(20, 30, 20);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
+      scene.add(dirLight);
+
+      const bluePointLight = new THREE.PointLight(0x38bdf8, 1.2, 50);
+      bluePointLight.position.set(-15, 10, -15);
+      scene.add(bluePointLight);
+
+      const rimLight = new THREE.DirectionalLight(0x3b82f6, 0.5);
+      rimLight.position.set(0, -20, 0);
+      scene.add(rimLight);
+
+      const gridHelper = new THREE.GridHelper(30, 30, 0x3b82f6, 0x1f2937);
+      gridHelper.position.y = 0;
+      scene.add(gridHelper);
+
+      // Khởi tạo Raycaster bắt sự kiện Rê chuột (MouseMove), Click và Chạm (Touch)
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      canvas.addEventListener('mousemove', onCanvasMouseMove);
+      canvas.addEventListener('click', onCanvasClick);
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1 && currentTooltipMode !== 'none') {
+          showTooltipAtEvent(e.touches[0], true);
+        }
+      }, { passive: true });
+      canvas.addEventListener('mouseleave', () => {
+        if (!isPinnedByClick) {
+          document.getElementById('infoTooltip3D').style.display = 'none';
+        }
+      });
+
+      // Tự động thích ứng kích thước với ResizeObserver & Window Resize
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(() => {
+          onWindowResize();
+        });
+        ro.observe(container);
+      }
+      window.addEventListener('resize', onWindowResize);
+      animate3D();
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('canvas3dContainer');
+      if (!container || !renderer || !camera) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      if (w <= 0 || h <= 0) return;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    }
+
+    function resetCamera3D() {
+      if (!camera || !controls) return;
+      camera.position.set(14, 11, 16);
+      controls.target.set(0, -2.5, 0);
+      controls.update();
+      isPinnedByClick = false;
+      const tooltip = document.getElementById('infoTooltip3D');
+      if (tooltip) tooltip.style.display = 'none';
+    }
+
+    function toggleAutoRotate() {
+      controls.autoRotate = document.getElementById('chk_autorotate').checked;
+      controls.autoRotateSpeed = 1.5;
+    }
+
+    // XỬ LÝ KHI CHẠM / RÊ CHUỘT (HOVER) VÀO VẬT THỂ 3D
+    function onCanvasMouseMove(event) {
+      if (currentTooltipMode === 'none' || isPinnedByClick) return;
+      if (currentTooltipMode !== 'hover') return;
+
+      showTooltipAtEvent(event);
+    }
+
+    // XỬ LÝ KHI CLICK CHUỘT VÀO VẬT THỂ 3D
+    function onCanvasClick(event) {
+      if (currentTooltipMode === 'none') return;
+
+      if (currentTooltipMode === 'hover') {
+        // Click để ghim/bỏ ghim
+        isPinnedByClick = !isPinnedByClick;
+        if (!isPinnedByClick) {
+          showTooltipAtEvent(event);
+        }
+        return;
+      }
+
+      if (currentTooltipMode === 'click') {
+        showTooltipAtEvent(event, true);
+      }
+    }
+
+    function showTooltipAtEvent(event, toggleClick = false) {
+      const container = document.getElementById('canvas3dContainer');
+      if (!container || !camera || !renderer) return;
+      const rect = container.getBoundingClientRect();
+      
+      const clientX = (event.clientX !== undefined) ? event.clientX : (event.touches && event.touches[0] ? event.touches[0].clientX : 0);
+      const clientY = (event.clientY !== undefined) ? event.clientY : (event.touches && event.touches[0] ? event.touches[0].clientY : 0);
+
+      mouse.x = ((clientX - rect.left) / container.clientWidth) * 2 - 1;
+      mouse.y = -((clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(clickableObjects, true);
+      const tooltip = document.getElementById('infoTooltip3D');
+      if (!tooltip) return;
+
+      if (intersects.length > 0) {
+        let hitObj = intersects[0].object;
+        while (hitObj && !hitObj.userData.info && hitObj.parent) {
+          hitObj = hitObj.parent;
+        }
+
+        if (hitObj && hitObj.userData.info) {
+          const info = hitObj.userData.info;
+          let html = `<div class="tt-title"><i class="fa-solid fa-circle-info"></i> ${info.title}</div>`;
+          for (const [k, v] of Object.entries(info.details)) {
+            html += `<div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:3px;"><span style="color:#94a3b8; font-size:0.75rem;">${k}:</span> <strong style="color:#e2e8f0; font-family:'JetBrains Mono'; font-size:0.78rem;">${v}</strong></div>`;
+          }
+          tooltip.innerHTML = html;
+          tooltip.style.display = 'block';
+
+          // Tự động đổi vị trí nếu sát mép container, không bị tràn màn hình
+          const tooltipW = Math.min(270, container.clientWidth - 20);
+          const tooltipH = 160;
+          let left = clientX - rect.left + 14;
+          let top = clientY - rect.top + 14;
+
+          // Lật sang trái nếu chạm mép phải
+          if (left + tooltipW > container.clientWidth - 8) {
+            left = (clientX - rect.left) - tooltipW - 14;
+          }
+          // Lật lên trên nếu chạm mép dưới
+          if (top + tooltipH > container.clientHeight - 8) {
+            top = (clientY - rect.top) - tooltipH - 14;
+          }
+
+          // Kẹp an toàn trong khung nhìn container
+          left = Math.max(8, Math.min(left, container.clientWidth - tooltipW - 8));
+          top = Math.max(8, Math.min(top, container.clientHeight - tooltipH - 8));
+
+          tooltip.style.left = left + 'px';
+          tooltip.style.top = top + 'px';
+          return;
+        }
+      }
+
+      if (!isPinnedByClick) {
+        tooltip.style.display = 'none';
+      }
+    }
+
+    function renderLegend3D(layers, df, gw, hc, is_extended = false, original_depth = 0) {
+      const box = document.getElementById('legendBox');
+      if (!box) return;
+
+      let html = `
+        <div class="legend-item">
+          <div class="legend-color" style="background: #cbd5e1;"></div>
+          <span>Bê tông móng (Df = ${df.toFixed(2)}m)</span>
+        </div>
+      `;
+
+      layers.forEach((lyr, idx) => {
+        const hex = SOIL_PALETTE[idx % SOIL_PALETTE.length].toString(16).padStart(6, '0');
+        let noteExt = (is_extended && idx === layers.length - 1) ? ` <span style="color:#f59e0b; font-size:0.75rem;">(giả định mở rộng)</span>` : '';
+        let baseName = lyr.name.replace(/\s*\(Đặt móng\)/g, '').trim();
+        const isLast = (idx === layers.length - 1);
+        let isFootingLayer = isLast ? (df >= lyr.z_top - 0.0001) : (df >= lyr.z_top - 0.0001 && df < lyr.z_bot - 0.0001);
+        let displayName = isFootingLayer ? `${baseName} (Đặt móng)` : baseName;
+        html += `
+          <div class="legend-item">
+            <div class="legend-color" style="background: #${hex};"></div>
+            <span>${displayName}${noteExt} (h = ${lyr.h.toFixed(2)}m, z: -${lyr.z_top.toFixed(1)}m → -${lyr.z_bot.toFixed(1)}m)</span>
+          </div>
+        `;
+      });
+
+      html += `
+        <div class="legend-item">
+          <div class="legend-color" style="background: #00e5ff;"></div>
+          <span>Mực nước ngầm GW (z = ${gw.toFixed(2)}m)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #ef4444;"></div>
+          <span>Bóng nén lún Hc = ${hc.toFixed(2)}m</span>
+        </div>
+      `;
+
+      box.innerHTML = html;
+    }
+
+    // TẠO KHỐI MÓNG ĐƠN VÁT HÌNH THÁP CẮT CHUẨN KỸ THUẬT XÂY DỰNG
+    function createPyramidalFooting(b, l, h_base, h_slope, top_b, top_l, material) {
+      const geom = new THREE.BufferGeometry();
+
+      const hb = h_base;
+      const hs = h_slope;
+      const b2 = b / 2, l2 = l / 2;
+      const tb2 = top_b / 2, tl2 = top_l / 2;
+
+      const vertices = new Float32Array([
+        -b2, 0, -l2,   b2, 0, -l2,   b2, 0,  l2,  -b2, 0,  l2,
+        -b2, hb, -l2,  b2, hb, -l2,  b2, hb,  l2, -b2, hb,  l2,
+        -tb2, hb + hs, -tl2,  tb2, hb + hs, -tl2,  tb2, hb + hs,  tl2, -tb2, hb + hs,  tl2
+      ]);
+
+      const indices = [
+        0, 2, 1,  0, 3, 2,
+        0, 1, 5,  0, 5, 4,
+        1, 2, 6,  1, 6, 5,
+        2, 3, 7,  2, 7, 6,
+        3, 0, 4,  3, 4, 7,
+        4, 5, 9,  4, 9, 8,
+        5, 6, 10, 5, 10, 9,
+        6, 7, 11, 6, 11, 10,
+        7, 4, 8,  7, 8, 11,
+        8, 9, 10, 8, 10, 11
+      ];
+
+      geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
+
+      const mesh = new THREE.Mesh(geom, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      const edges = new THREE.EdgesGeometry(geom);
+      mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 })));
+
+      return mesh;
+    }
+
+    // TẠO HỘP ĐẤT CẮT GÓC ĐỂ LỘ MÓNG BÊN TRONG
+    function createCutawaySoilMesh(width, depth, height, material, isCutaway) {
+      if (!isCutaway) {
+        const geom = new THREE.BoxGeometry(width, height, depth);
+        const mesh = new THREE.Mesh(geom, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        const edges = new THREE.EdgesGeometry(geom);
+        mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18 })));
+        return mesh;
+      }
+
+      const group = new THREE.Group();
+
+      const gBack = new THREE.BoxGeometry(width, height, depth / 2);
+      const mBack = new THREE.Mesh(gBack, material);
+      mBack.position.set(0, 0, -depth / 4);
+      mBack.castShadow = true; mBack.receiveShadow = true;
+      mBack.add(new THREE.LineSegments(new THREE.EdgesGeometry(gBack), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 })));
+      group.add(mBack);
+
+      const gLeft = new THREE.BoxGeometry(width / 2, height, depth / 2);
+      const mLeft = new THREE.Mesh(gLeft, material);
+      mLeft.position.set(-width / 4, 0, depth / 4);
+      mLeft.castShadow = true; mLeft.receiveShadow = true;
+      mLeft.add(new THREE.LineSegments(new THREE.EdgesGeometry(gLeft), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 })));
+      group.add(mLeft);
+
+      return group;
+    }
+
+    function update3DScene() {
+      if (!scene || !globalCalculationData) return;
+
+      clickableObjects = [];
+      waterMesh = null; // Tránh giữ tham chiếu cũ khi ẩn nước hoặc reset
+
+      if (modelGroup) {
+        scene.remove(modelGroup);
+        modelGroup.traverse(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+            else child.material.dispose();
+          }
+        });
+      }
+
+      modelGroup = new THREE.Group();
+      scene.add(modelGroup);
+
+      const isCutaway = document.getElementById('chk_cutaway').checked;
+      const isExploded = document.getElementById('chk_explode').checked;
+      const showForces = document.getElementById('chk_forces').checked;
+      const showWater = document.getElementById('chk_water').checked;
+      const showHcBulb = document.getElementById('chk_hc_bulb').checked;
+
+      const { b, l, h, N, M, M_dir, gw, hc, layers } = globalCalculationData;
+
+      // Tính tổng chiều sâu mô hình và hệ số tỉ lệ đồng nhất scaleY
+      const totalSoilDepth = (layers && layers.length > 0) ? layers[layers.length - 1].z_bot : 25.0;
+      const maxDepthModel = Math.max(totalSoilDepth, h + hc + 1.0, gw + 1.0);
+      const scaleY = (maxDepthModel > 18.0) ? (18.0 / maxDepthModel) : 1.0;
+
+      // 1. DỰNG CÁC LỚP ĐẤT NỀN (Tỷ lệ chiều sâu đồng nhất với móng, mực nước ngầm và bóng lún)
+      const soilWidth = 14;
+      const soilDepth = 14;
+      let explodeOffset = 0;
+
+      layers.forEach((lyr, idx) => {
+        const displayThickness = lyr.h * scaleY;
+
+        const soilMat = new THREE.MeshStandardMaterial({
+          color: SOIL_PALETTE[idx % SOIL_PALETTE.length],
+          roughness: 0.85,
+          metalness: 0.1,
+          transparent: true,
+          opacity: 0.85
+        });
+
+        const soilMesh = createCutawaySoilMesh(soilWidth, soilDepth, displayThickness, soilMat, isCutaway);
+
+        if (isExploded) {
+          explodeOffset += 1.5;
+        }
+
+        const topY = -lyr.z_top * scaleY - explodeOffset;
+        const centerY = topY - (displayThickness / 2);
+        soilMesh.position.set(0, centerY, 0);
+
+        soilMesh.userData = {
+          info: {
+            title: `Địa Tầng: ${lyr.name}`,
+            details: {
+              "Thứ tự": `Lớp ${idx + 1}`,
+              "Bề dày h": `${lyr.h.toFixed(2)} m`,
+              "Cao độ đỉnh": `-${lyr.z_top.toFixed(2)} m`,
+              "Cao độ đáy": `-${lyr.z_bot.toFixed(2)} m`,
+              "Dung trọng γ": `${lyr.gamma} kN/m³`,
+              "Dung trọng bão hòa": `${lyr.gamma_sat} kN/m³`,
+              "Mô-đun biến dạng E": `${lyr.E} kN/m²`,
+              "Hệ số rỗng e0": `${lyr.e_dict && lyr.e_dict[0] !== undefined ? lyr.e_dict[0] : (lyr.e0 || '--')}`,
+              "Hệ số rỗng e100": `${lyr.e_dict && lyr.e_dict[100] !== undefined ? lyr.e_dict[100] : '--'}`,
+              "Hệ số rỗng e200": `${lyr.e_dict && lyr.e_dict[200] !== undefined ? lyr.e_dict[200] : '--'}`
+            }
+          }
+        };
+
+        clickableObjects.push(soilMesh);
+        modelGroup.add(soilMesh);
+      });
+
+      // 2. DỰNG KẾT CẤU MÓNG ĐƠN CỨNG DƯỚI CỘT
+      const concreteMat = new THREE.MeshStandardMaterial({
+        color: 0xdbeafe,
+        roughness: 0.5,
+        metalness: 0.2
+      });
+
+      const footingGroup = new THREE.Group();
+
+      const h_base = 0.35;
+      const h_slope = 0.45;
+      const col_b = 0.5;
+      const col_l = 0.5;
+      const footingDepthY = -h * scaleY;
+      const topOfBase = footingDepthY + h_base + h_slope;
+      const col_h = Math.max(1.5, (h * scaleY) + 2.0);
+
+      const baseFooting = createPyramidalFooting(b, l, h_base, h_slope, col_b + 0.3, col_l + 0.3, concreteMat);
+      baseFooting.position.set(0, footingDepthY, 0);
+      footingGroup.add(baseFooting);
+
+      const colGeom = new THREE.BoxGeometry(col_b, col_h, col_l);
+      const colMesh = new THREE.Mesh(colGeom, concreteMat);
+      colMesh.position.set(0, topOfBase + (col_h / 2), 0);
+      colMesh.castShadow = true;
+      colMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(colGeom), new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 })));
+      footingGroup.add(colMesh);
+
+      footingGroup.userData = {
+        info: {
+          title: "Kết Cấu Móng Đơn Cứng Dưới Cột",
+          details: {
+            "Bề rộng đáy móng (b)": `${b.toFixed(2)} m`,
+            "Chiều dài đáy móng (l)": `${l.toFixed(2)} m`,
+            "Diện tích đáy móng (F)": `${(b * l).toFixed(2)} m²`,
+            "Độ sâu chôn móng (Df)": `${h.toFixed(2)} m`,
+            "Tiết diện cột": `${col_b}m × ${col_l}m`,
+            "Bề dày đế phẳng": `${h_base} m`,
+            "Chiều cao vát móng": `${h_slope} m`,
+            "Lực dọc N": `${N} kN`,
+            "Mô-men uốn M": `${M} kN·m`
+          }
+        }
+      };
+
+      clickableObjects.push(footingGroup);
+      modelGroup.add(footingGroup);
+
+      // 3. VẼ VECTƠ TẢI TRỌNG CHÂN CỘT (Tỷ lệ chiều dài phản ánh độ lớn tải trọng N và M)
+      if (showForces) {
+        const topOfColY = topOfBase + col_h;
+        const forceGroup = new THREE.Group();
+
+        // Độ dài mũi tên N tỷ lệ với log10(N)
+        const arrowLenN = Math.max(1.2, Math.min(4.2, 1.0 + Math.log10(Math.max(1, N)) * 0.75));
+        const arrowDir = new THREE.Vector3(0, -1, 0);
+        const arrowOrigin = new THREE.Vector3(0, topOfColY + arrowLenN, 0);
+        const headLenN = Math.min(0.6, arrowLenN * 0.25);
+        const arrowN = new THREE.ArrowHelper(arrowDir, arrowOrigin, arrowLenN, 0x38bdf8, headLenN, headLenN * 0.6);
+        forceGroup.add(arrowN);
+
+        // Vectơ mô-men uốn M: chỉ vẽ khi M > 0 và kích thước tỷ lệ với M
+        if (M > 0.001) {
+          const mRadius = Math.max(0.6, Math.min(1.8, 0.5 + Math.log10(Math.max(1, M)) * 0.25));
+          const curve = new THREE.EllipseCurve(0, 0, mRadius, mRadius, -Math.PI / 4, Math.PI * 0.85, false, 0);
+          const points = curve.getPoints(32);
+          const curveGeom = new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(p.x, p.y, 0)));
+          const curveMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, linewidth: 3 });
+          const curveMesh = new THREE.Line(curveGeom, curveMat);
+          curveMesh.position.set(0, topOfColY + 1.0, 0);
+          const is_dir_b = (M_dir === 'b' || (M_dir === 'auto' && b > l));
+          if (is_dir_b) {
+            curveMesh.rotation.y = 0; // Uốn quanh trục Z, trong mặt phẳng X-Y theo phương cạnh b
+          } else {
+            curveMesh.rotation.y = Math.PI / 2; // Uốn quanh trục X, trong mặt phẳng Z-Y theo phương cạnh l
+          }
+          forceGroup.add(curveMesh);
+
+          const mArrowDir = new THREE.Vector3(0, 1, 0);
+          const mArrowOrigin = is_dir_b 
+            ? new THREE.Vector3(mRadius, topOfColY + 1.0, 0)
+            : new THREE.Vector3(0, topOfColY + 1.0, mRadius);
+          const mArrowHead = Math.min(0.4, mRadius * 0.3);
+          const mArrow = new THREE.ArrowHelper(mArrowDir, mArrowOrigin, mArrowHead * 1.5, 0xf59e0b, mArrowHead, mArrowHead * 0.6);
+          forceGroup.add(mArrow);
+        }
+
+        modelGroup.add(forceGroup);
+      }
+
+      // 4. MỰC NƯỚC NGẦM 3D (gw >= 0: tỷ lệ đồng nhất scaleY)
+      if (showWater && gw >= 0) {
+        const waterGeom = new THREE.PlaneGeometry(soilWidth + 3, soilDepth + 3, 32, 32);
+        const waterMat = new THREE.MeshPhysicalMaterial({
+          color: 0x00d2ff,
+          emissive: 0x005577,
+          emissiveIntensity: 0.3,
+          transparent: true,
+          opacity: 0.65,
+          roughness: 0.1,
+          metalness: 0.1,
+          transmission: 0.6,
+          side: THREE.DoubleSide
+        });
+
+        waterMesh = new THREE.Mesh(waterGeom, waterMat);
+        waterMesh.rotation.x = -Math.PI / 2;
+        waterMesh.position.set(0, -gw * scaleY, 0);
+
+        waterMesh.userData = {
+          info: {
+            title: "Mực Nước Ngầm (GW)",
+            details: {
+              "Cao độ z (từ mặt đất)": `-${gw.toFixed(2)} m`,
+              "Trạng thái": "Bắt đầu xuất hiện áp lực đẩy nổi Archimedes",
+              "Dung trọng đẩy nổi γ'": "γ_sat - 10 kN/m³"
+            }
+          }
+        };
+
+        clickableObjects.push(waterMesh);
+        modelGroup.add(waterMesh);
+
+        const waterEdges = new THREE.LineSegments(
+          new THREE.EdgesGeometry(waterGeom),
+          new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 })
+        );
+        waterMesh.add(waterEdges);
+      }
+
+      // 5. BÓNG NÉN LÚN HOẠT TÍNH Hc (Tỷ lệ đồng nhất scaleY)
+      if (showHcBulb && hc > 0) {
+        const bulbHeight = hc * scaleY;
+        const bulbGeom = new THREE.ConeGeometry(b * 1.35, bulbHeight, 32, 1, true);
+        bulbGeom.rotateX(Math.PI);
+
+        const bulbMat = new THREE.MeshStandardMaterial({
+          color: 0xef4444,
+          transparent: true,
+          opacity: 0.35,
+          side: THREE.DoubleSide
+        });
+
+        const bulbMesh = new THREE.Mesh(bulbGeom, bulbMat);
+        bulbMesh.position.set(0, footingDepthY - (bulbHeight / 2), 0);
+
+        bulbMesh.userData = {
+          info: {
+            title: "Vùng Nén Lún Hoạt Tính (Hc)",
+            details: {
+              "Chiều sâu tắt lún Hc": `${hc.toFixed(2)} m`,
+              "Cao độ tắt lún": `-${(h + hc).toFixed(2)} m`,
+              "Điều kiện dừng lún": "σ_bt ≥ 5·σ_gl (hoặc 10·σ_gl)"
+            }
+          }
+        };
+
+        clickableObjects.push(bulbMesh);
+        modelGroup.add(bulbMesh);
+
+        const ringGeom = new THREE.RingGeometry(0.1, b * 0.45, 32);
+        ringGeom.rotateX(Math.PI / 2);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
+        const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+        ringMesh.position.set(0, footingDepthY - bulbHeight, 0);
+        modelGroup.add(ringMesh);
+      }
+    }
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+
+      if (waterMesh && waterMesh.geometry && waterMesh.geometry.attributes.position) {
+        const time = Date.now() * 0.002;
+        const pos = waterMesh.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const u = pos.getX(i);
+          const v = pos.getY(i);
+          pos.setZ(i, Math.sin(u * 1.5 + time) * 0.08 + Math.cos(v * 1.5 + time) * 0.08);
+        }
+        pos.needsUpdate = true;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function datLaiMacDinh() {
+      document.getElementById('inp_b').value = "2.0";
+      document.getElementById('inp_l').value = "3.0";
+      document.getElementById('inp_h').value = "2.0";
+      document.getElementById('inp_gw').value = "7.70";
+      document.getElementById('inp_N').value = "1709.0";
+      document.getElementById('inp_M').value = "259.0";
+      if (document.getElementById('inp_M_dir')) document.getElementById('inp_M_dir').value = "l";
+      document.getElementById('inp_gamma_tb').value = "20.0";
+      document.getElementById('inp_S_limit').value = "8.0";
+
+      epSteps = [0, 100, 200, 300, 400];
+
+      soilLayersData = [
+        { name: "Lớp 1", h: 0.93, gamma: 15.11, sat: 16.88, E: 7013, ep_dict: { 0: 0.990, 100: 0.954, 200: 0.918, 300: 0.872, 400: 0.864 }, e0: 0.990, e100: 0.954, e200: 0.918, e300: 0.872, e400: 0.864 },
+        { name: "Lớp 2", h: 1.56, gamma: 18.31, sat: 19.33, E: 25390, ep_dict: { 0: 0.940, 100: 0.874, 200: 0.808, 300: 0.778, 400: 0.776 }, e0: 0.940, e100: 0.874, e200: 0.808, e300: 0.778, e400: 0.776 },
+        { name: "Lớp 3", h: 23.76, gamma: 19.04, sat: 20.39, E: 25800, ep_dict: { 0: 0.745, 100: 0.705, 200: 0.665, 300: 0.657, 400: 0.656 }, e0: 0.745, e100: 0.705, e200: 0.665, e300: 0.657, e400: 0.656 }
+      ];
+
+      renderSoilTable();
+      tinhToanDoLun();
+    }
+
+    window.onload = function() {
+      init3D();
+      renderSoilTable();
+      tinhToanDoLun();
+    };
+  </script>
+</body>
+</html>
